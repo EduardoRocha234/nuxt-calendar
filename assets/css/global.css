@@ -1,0 +1,143 @@
+body {
+	font-family: 'Inter', sans-serif !important;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+	transition: opacity 0.4s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+	opacity: 0;
+}
+
+.Vue-Toastification__toast.ctgi-toast {
+	font-family: 'Inter', sans-serif !important;
+}
+
+.Vue-Toastification__toast.Vue-Toastification__toast--error.ctgi-toast {
+	background-color: #ef4444;
+}
+
+.Vue-Toastification__toast.Vue-Toastification__toast--success.ctgi-toast {
+	background-color: #10b981;
+}
+
+.Vue-Toastification__toast.Vue-Toastification__toast--info.ctgi-toast {
+	background-color: #3b82f6;
+}
+
+.Vue-Toastification__toast.Vue-Toastification__toast--warning.ctgi-toast {
+	background-color: #f59e0b;
+}
+
+.el-input {
+	@apply h-10 w-full;
+}
+
+.el-label {
+	@apply mb-2 block select-none text-sm font-semibold uppercase text-slate-800;
+}
+
+.el-label.el-label--inline {
+	@apply mb-0 inline-block;
+}
+
+.el-title {
+	@apply text-xl font-bold text-slate-800;
+}
+
+.driver-popover .driver-popover-title,
+.driver-popover .driver-popover-description,
+.driver-popover .driver-popover-progress-text {
+	@apply text-slate-700;
+}
+
+.driver-popover .driver-popover-description {
+	@apply text-base;
+}
+
+.driver-popover .driver-popover-title {
+	@apply text-xl;
+}
+
+.el-button {
+	@apply rounded-md border border-transparent px-6 py-3 text-white transition-all duration-200 ease-out;
+}
+
+.el-button.el-button--blue {
+	@apply bg-blue-600 hover:bg-blue-700;
+}
+
+.el-button.el-button--blue:disabled {
+	@apply cursor-not-allowed bg-blue-400;
+}
+
+.el-button.el-button--gray {
+	@apply bg-slate-400 hover:bg-slate-500;
+}
+
+.el-button.el-button--gray:disabled {
+	@apply cursor-not-allowed bg-slate-400;
+}
+
+.el-button.el-button--out-gray {
+	@apply border-slate-400 bg-white text-slate-400 hover:bg-slate-400 hover:text-white;
+}
+
+.el-button.el-button--out-gray:disabled {
+	@apply cursor-not-allowed border-slate-400 text-slate-400 hover:bg-white;
+}
+
+.el-button.el-button--out-blue {
+	@apply border-blue-600 bg-white text-blue-600 hover:bg-blue-600 hover:text-white;
+}
+
+.el-button.el-button--out-blue:disabled {
+	@apply cursor-not-allowed border-blue-400 text-blue-400 hover:bg-white;
+}
+
+.el-button.el-button--red {
+	@apply bg-red-600 hover:bg-red-700;
+}
+
+.el-button.el-button--red:disabled {
+	@apply cursor-not-allowed bg-red-400;
+}
+
+.el-button.el-button--out-red {
+	@apply border-red-600 bg-white text-red-600 hover:bg-red-600 hover:text-white;
+}
+
+.el-button.el-button--green {
+	@apply bg-emerald-600 hover:bg-emerald-700;
+}
+
+.el-btn-add-content {
+	@apply mx-2 flex items-center font-semibold text-white;
+}
+
+.el-btn-menudrop {
+	@apply w-fit min-w-52 p-2;
+}
+
+.el-btn-menudrop-item {
+	@apply flex w-full items-center gap-4 rounded-md px-4 py-2 font-semibold transition-all duration-200 hover:bg-slate-100;
+}
+
+.el-tabpanel-list {
+	@apply mb-2 flex space-x-1 rounded-xl border border-slate-200 bg-white p-2;
+}
+
+label.required {
+	position: relative;
+}
+
+label.required::after {
+	content: '*';
+	position: absolute;
+	top: -5px;
+	right: -10px;
+	color: #e53e3e;
+}
