@@ -322,37 +322,25 @@ watch(calendars, () => {
 
 const CALENDAR_PT = {
 	root: {
-		class: '!text-xs !p-2', // Reduzindo padding e garantindo fundo claro
+		class: '!text-xs !p-2',
 	},
-	// calendar: {
-	// 	class: '!w-[180px] !h-[14rem]', // Definindo largura e altura menores
-	// },
 	monthTitle: {
-		class: '!text-xs !font-semibold', // Reduzindo tamanho da fonte do mês
+		class: '!text-xs !font-semibold',
 	},
 	yearTitle: {
-		class: '!text-xs !ml-1', // Ajuste para o ano
+		class: '!text-xs !ml-1',
 	},
 	tableBody: {
 		class: '!text-xs',
 	},
 	tableheaderrow: {
-		class: '!hidden', // Ocultar cabeçalho de dias da semana se necessário
+		class: '!hidden',
 	},
-	// day: {
-	// 	class: '!m-0 !p-0', // Removendo margens desnecessárias
-	// },
 	day: ({context}: any) => ({
-		class: [
-			'!p-1 !w-6 !h-6', // Reduzindo tamanho dos dias
-			{'!bg-blue-600 !text-white': context.today}, // Estilizando o dia atual
-		],
+		class: ['!p-1 !w-6 !h-6', {'!bg-green-700 !text-white': context.today}],
 	}),
 	dayLabel: ({context}: any) => ({
-		class: [
-			'!p-1 !w-6 !h-6 !rounded-md', // Reduzindo tamanho dos dias
-			// {'!bg-blue-600 !text-white': context.today}, // Estilizando o dia atual
-		],
+		class: ['!p-1 !w-6 !h-6 !rounded-md'],
 	}),
 }
 </script>

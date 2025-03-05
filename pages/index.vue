@@ -64,7 +64,6 @@
 			@refresh-data="recarregarEventos"
 		/>
 	</div>
-	aq{{ eventosFilter }}
 </template>
 
 <script setup lang="ts">
@@ -84,15 +83,6 @@ import type {
 	EventHoveringArg,
 	EventInput,
 } from '@fullcalendar/core'
-
-// import {
-// 	EAgendaEventoSituacao,
-// 	type IAgenda,
-// 	type IAgendaCondifurarPorUsuarioSaida,
-// 	type IAgendaEvento,
-// } from '~/interfaces'
-// import type {IMenusAgendas} from '~/partials/sistema/area-trabalho/BarraLateral.vue'
-// import type ModalDetalhesEvento from '~/partials/sistema/area-trabalho/ModalDetalhesEvento.vue'
 import {driver} from 'driver.js'
 import 'driver.js/dist/driver.css'
 import type {
@@ -150,27 +140,19 @@ const opcoesConfiguracao = useStorage('configuracoes-calendario', {
 const tourPelaAgenda = useStorage('tour-agenda', true)
 
 const eventosFilter = computed(() => {
-	console.log(agendasSelecionadas.value)
-	// if(!agendasSelecionadas.value?.length || !eventos.value?.length) return []
-	// if(true) return []
-	
-	// const agendasSelecionadasIds = new Set(
-	// 	agendasSelecionadas.value.map((a) => a.id)
-	// )
+	if (!fullCalendar.value?.getApi()) return []
 
-	// if (agendasSelecionadasIds.size === 0) return []
+	const agendasSelecionadasIds = new Set(
+		agendasSelecionadas.value.map((a) => a.id)
+	)
 
-	// console.log(agendasSelecionadasIds.size)
+	if (agendasSelecionadasIds.size === 0) return []
 
-	// console.log(eventos.value)
+	const filter = eventos.value.filter((e) =>
+		agendasSelecionadasIds.has(e.extendedProps?.calendarId)
+	)
 
-	// const filter = eventos.value.filter((e) =>
-	// 	agendasSelecionadasIds.has(e.extendedProps?.calendarId)
-	// )
-
-	// console.log(filter)
-
-	return eventos.value
+	return filter
 })
 
 const abrirPopupEvento = (info: EventHoveringArg) => {
@@ -260,7 +242,6 @@ const fullcalendarProps = computed<CalendarOptions>(() => ({
 	// locale: 'pt-BR',
 	events: eventosFilter.value,
 	dayMaxEventRows: 5,
-	editable: true, // serve para arrastar e soltar os eventos, futuramente da para permitir mudar a data de um evento arrastando ele (eventDrop)
 	selectable: true,
 	handleWindowResize: true,
 	nowIndicator: true,
@@ -271,7 +252,7 @@ const fullcalendarProps = computed<CalendarOptions>(() => ({
 	dayCellClassNames: (info) => {
 		const day = info.date.getDay()
 		if (day === 0 || day === 6) {
-			return 'bg-pink-50 text-slate-400'
+			return 'bg-green-50 text-slate-600'
 		}
 		return ''
 	},
@@ -563,28 +544,28 @@ onMounted(async () => {
 
 <style>
 .fc .fc-toolbar.fc-header-toolbar {
-	background-color: var(--surface-100); /* Fundo do cabeçalho */
+	background-color: var(--p-indigo-50); /* Fundo do cabeçalho */
 	border-radius: 8px;
 	padding: 10px;
 }
 
 .fc .fc-day-today {
-	background-color: var(--primary-50) !important;
+	background-color: var(--p-emerald-50) !important;
 }
 
 .fc .fc-daygrid-day:hover {
-	background-color: var(--primary-100) !important;
+	background-color: var(--p-emerald-100) !important;
 }
 
 .fc .fc-toolbar-title {
-	color: #333; /* Cor do título */
+	color: var(--p-emerald-500); /* Cor do título */
 	font-size: 18px;
 	font-weight: bold;
 	text-transform: uppercase;
 }
 
 .fc .fc-button {
-	background-color: var(--primary-400); /* Cor de fundo dos botões */
+	background-color: var(--p-emerald-500); /* Cor de fundo dos botões */
 	color: white; /* Cor do texto */
 	border: none;
 	border-radius: 4px;
@@ -592,15 +573,15 @@ onMounted(async () => {
 }
 
 .fc .fc-button:hover {
-	background-color: var(--primary-600); /* Cor ao passar o mouse */
+	background-color: var(--p-emerald-600); /* Cor ao passar o mouse */
 }
 
 .fc .fc-button:active {
-	background-color: var(--primary-600) !important; /* Cor ao clicar */
+	background-color: var(--p-emerald-500) !important; /* Cor ao clicar */
 }
 
 .fc .fc-button.fc-button-active {
-	background-color: var(--primary-600) !important; /* Cor do botão ativo */
+	background-color: var(--p-emerald-600) !important; /* Cor do botão ativo */
 	color: white;
 }
 
@@ -614,12 +595,12 @@ onMounted(async () => {
 .fc-timegrid,
 .fc-daygrid {
 	border-radius: 8px;
-	border: 1px solid var(--surface-100);
+	border: 1px solid var(--p-indigo-100);
 	overflow: hidden;
 }
 
 .fc-daygrid-day {
-	border-right: 1px solid var(--surface-100);
-	border-bottom: 1px solid var(--surface-100);
+	border-right: 1px solid var(--p-indigo-100);
+	border-bottom: 1px solid var(--p-indigo-100);
 }
 </style>
