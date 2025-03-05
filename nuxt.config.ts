@@ -17,6 +17,7 @@ export default defineNuxtConfig({
 		'nuxt-headlessui',
 		'@vueuse/nuxt',
 		'@primevue/nuxt-module',
+		'dayjs-nuxt',
 	],
 	css: [
 		'./assets/css/base.css',
@@ -36,6 +37,9 @@ export default defineNuxtConfig({
 		options: {
 			theme: {
 				preset: Lara,
+				options: {
+					darkModeSelector: '.dark-mode',
+				},
 			},
 		},
 	},

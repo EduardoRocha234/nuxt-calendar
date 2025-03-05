@@ -5,7 +5,7 @@ export enum EventPriority {
 }
 
 export interface ICalendarEvent {
-	id?: string
+	id?: number
 	name?: string
 	description?: string
 	priority?: EventPriority
@@ -14,8 +14,9 @@ export interface ICalendarEvent {
 	endDate?: Date
 	notify?: boolean
 	recurrencyRule?: string
-	calendarId?: string
+	calendarId?: number
 	userId?: string
 	participantsIds?: string
 	color?: string
+	deleted?: boolean
 }
