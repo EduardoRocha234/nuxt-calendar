@@ -20,8 +20,6 @@ export default defineNuxtConfig({
 		'dayjs-nuxt',
 	],
 	css: [
-		'./assets/css/base.css',
-		'./assets/css/tailwind.css',
 		'./assets/css/global.css',
 	],
 	build: {
@@ -44,10 +42,7 @@ export default defineNuxtConfig({
 		},
 	},
 	tailwindcss: {
-		cssPath: ['./assets/css/tailwind.css', {injectPosition: 'first'}],
-		configPath: './tailwind.config.js',
 		editorSupport: true,
-		viewer: false,
 	},
 	vueuse: {
 		autoImports: true,
