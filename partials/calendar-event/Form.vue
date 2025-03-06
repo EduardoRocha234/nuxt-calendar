@@ -1,7 +1,7 @@
 <template>
 	<Dialog
 		v-model:visible="visible"
-		:header="telaEditar ? 'Update event' : 'Add event'"
+		:header="isEditing ? 'Update event' : 'Add event'"
 		modal
 		maximizable
 		:style="{width: '80vw'}"
@@ -20,7 +20,7 @@
 						id="titile"
 						v-model="formEvent.name"
 						label="Title"
-						:error="getError('nome')"
+						:error="getError('name')"
 						:loading="showLoading"
 						required
 					/>
@@ -61,9 +61,15 @@
 							option-value="id"
 							fluid
 							:loading="showLoading"
+							:invalid="!!getError('calendarId')"
 						/>
-						<label for="calendarId">Select a calandar</label>
+						<label for="calendarId">Select a calendar</label>
 					</FloatLabel>
+					<span
+						v-if="!!getError('calendarId')"
+						class="text-sm text-red-600"
+						>{{ getError('calendarId') }}</span
+					>
 				</div>
 				<div class="mb-8 w-full">
 					<FloatLabel>
@@ -84,10 +90,16 @@
 							option-label="name"
 							option-value="id"
 							fluid
+							:invalid="!!getError('priority')"
 							:loading="showLoading"
 						/>
 						<label for="priority">Priority mode</label>
 					</FloatLabel>
+					<span
+						v-if="!!getError('priority')"
+						class="text-sm text-red-600"
+						>{{ getError('priority') }}</span
+					>
 				</div>
 				<div class="mb-8 flex gap-2">
 					<div class="flex w-full flex-col">
@@ -102,6 +114,7 @@
 								filter
 								fluid
 								:max-selected-labels="3"
+								:invalid="!!getError('participantsIds')"
 								:loading="loadingUsers || showLoading"
 								:show-toggle-all="false"
 								:virtual-scroller-options="{itemSize: 44}"
@@ -116,15 +129,15 @@
 							<label for="guests">Guests</label>
 						</FloatLabel>
 						<span
-							v-if="!!getError('participantesIds')"
+							v-if="!!getError('participantsIds')"
 							class="text-sm text-red-600"
-							>{{ getError('participantesIds') }}</span
+							>{{ getError('participantsIds') }}</span
 						>
 					</div>
 				</div>
 				<div class="mb-4 flex gap-6">
 					<div class="flex items-center gap-2">
-						<ToggleSwitch 
+						<ToggleSwitch
 							v-model="formEvent.allDay"
 							input-id="allDay"
 						/>
@@ -135,7 +148,7 @@
 						>
 					</div>
 					<div class="flex items-center gap-2">
-						<ToggleSwitch 
+						<ToggleSwitch
 							v-model="formEvent.notify"
 							input-id="notify"
 						/>
@@ -146,7 +159,7 @@
 						>
 					</div>
 					<div class="flex items-center gap-2">
-						<ToggleSwitch 
+						<ToggleSwitch
 							v-model="recurrencyEvent"
 							input-id="recurrencyEvent"
 						/>
@@ -164,19 +177,24 @@
 			>
 				<!-- <LazyUiPartialSistemaAreaTrabalhoFormEventoRecorrencia
 					v-model:regra-recorrencia="formEvent.regraRecorrencia"
-					:tela-editar="telaEditar"
+					:tela-editar="isEditing"
 				/> -->
+				<AppPartialCalendarEventRecurrencyForm
+					v-model:recurrency-rule="formEvent.recurrencyRule"
+					:is-editing="isEditing"
+				/>
 			</div>
 		</div>
 		<template #footer>
-			<!-- <LazyUiFormRodape
-				:tela-editar="telaEditar"
-				@clck-cancelar="closeModal()"
-				@clck-deletar="deleteEvent()"
-				@clck-salvar-edit="sendForm()"
-				@clck-salvar-novo="sendForm(false)"
-				@clck-salvar-fechar="sendForm()"
-			/> -->
+			<div class="w-full flex justify-end gap-4 mx-4">
+				<Button
+					text
+					@click="closeModal"
+				>
+					Cancel
+				</Button>
+				<Button @click="sendForm">Save</Button>
+			</div>
 		</template>
 	</Dialog>
 </template>
@@ -187,8 +205,8 @@ import {
 	type ICalendar,
 	type ICalendarEvent,
 	type IUser,
-} from '~/interfaces'
-import * as zod from 'zod'
+} from '~/interfaces';
+import * as zod from 'zod';
 
 const props = defineProps<{
 	id?: string | null
@@ -199,25 +217,25 @@ const props = defineProps<{
 
 const {calendars, starDate, endDate} = toRefs(props)
 
-// const usuario = useUsuario()
+const user = useUser()
 
 const emits = defineEmits<{
 	(event: 'delete', id: string): void
 	(event: 'refreshData'): () => void
 }>()
 
-// const {$toast} = useNuxtApp()
+const {$toast} = useNuxtApp()
 
-const telaEditar = computed(() => !!props.id)
+const isEditing = computed(() => !!props.id)
 const visible = defineModel<boolean>()
 const loading = ref<boolean>(false)
 const users = ref<IUser[]>([])
 const loadingUsers = ref<boolean>(false)
-const selectedGuests = ref<string[]>([])
+const selectedGuests = ref<number[]>([])
 const recurrencyEvent = ref<boolean>(false)
 
 const showLoading = computed(
-	() => telaEditar.value && (loading.value || loadingUsers.value)
+	() => isEditing.value && (loading.value || loadingUsers.value)
 )
 
 const priorityOptions = Object.values(EventPriority).map((value) => ({
@@ -230,15 +248,15 @@ const initialValues: ICalendarEvent = {
 	name: undefined,
 	description: undefined,
 	priority: undefined,
-	allDay: undefined,
 	startDate: undefined,
 	endDate: undefined,
-	notify: undefined,
 	recurrencyRule: undefined,
 	calendarId: undefined,
-	userId: undefined,
+	userId: user.value?.id,
 	participantsIds: undefined,
 	color: undefined,
+	allDay: false,
+	notify: false,
 }
 
 const formEvent = reactive<ICalendarEvent>({
@@ -272,26 +290,16 @@ const validation = zod.object({
 		.refine((val) => validateDate(val, '>=', new Date(formEvent.startDate!)), {
 			message: 'End date cannot be earlier than Start date',
 		}),
-	calendarId: zod
-		.string({
-			required_error: 'Calendar is required',
-		})
-		.min(1, {
-			message: 'Calendar is required',
-		}),
+	calendarId: zod.number({
+		required_error: 'Calendar is required',
+		invalid_type_error: 'Calendar is required',
+	}),
 	priority: zod
 		.string({
 			required_error: 'Priority is required',
 		})
 		.min(1, {
 			message: 'Priority is required',
-		}),
-	userId: zod
-		.string({
-			required_error: 'Responsible person is required',
-		})
-		.min(1, {
-			message: 'Responsible person is required',
 		}),
 	participantsIds: zod
 		.string({
@@ -311,7 +319,7 @@ const validation = zod.object({
 		}),
 })
 
-const {valid, getError, validate, clearErrors} = useFormValidation(
+const {valid, getError, validate, clearErrors, errors} = useFormValidation(
 	validation,
 	formEvent,
 	{
@@ -319,24 +327,22 @@ const {valid, getError, validate, clearErrors} = useFormValidation(
 	}
 )
 
-const sendForm = async (saveAndClose = true) => {
+const sendForm = async () => {
 	try {
 		formEvent.participantsIds = selectedGuests.value.join(',')
 
 		await validate()
+
+		console.log(errors)
 
 		if (!valid.value) return
 
 		if (props.id) await updateEvent()
 		else await addNewEvent()
 
-		if (saveAndClose) {
-			closeModal()
-		} else {
-			Object.assign(formEvent, initialValues)
-		}
+		closeModal()
 	} catch (err) {
-		// $toast.error((err as Error).message)
+		$toast.error((err as Error).message)
 	}
 }
 
@@ -354,7 +360,7 @@ const deleteEvent = () => {
 
 const fetchUsers = async () => {
 	loadingUsers.value = true
-	const res = await $fetch.raw<IUser[]>('api/users', {
+	const res = await $fetch.raw<IUser[]>('api/user', {
 		ignoreResponseError: true,
 	})
 	loadingUsers.value = false
@@ -362,7 +368,7 @@ const fetchUsers = async () => {
 	if (res.ok) {
 		users.value = res._data as IUser[]
 	} else {
-		// $toast.error('Ocorreu um erro ao buscar os dados de participantes')
+		$toast.error('An error occurred while fetching guests')
 	}
 }
 
@@ -387,20 +393,20 @@ const getEventById = async () => {
 			if (data.recurrencyRule?.length) recurrencyEvent.value = true
 
 			if (data.participantsIds) {
-				const splitParticipantes = data.participantsIds?.split(',')
+				const splitParticipantes = data.participantsIds?.split(',').map(Number)
 
 				if (splitParticipantes.length > 0) {
 					selectedGuests.value = splitParticipantes
 				} else {
-					selectedGuests.value.push(data.participantsIds)
+					selectedGuests.value.push(Number(data.participantsIds))
 				}
 			}
 			return
 		}
 
-		// $toast.error('Ocorreu um erro ao buscar o evento')
+		$toast.error('An error ocurrend while fetching the event')
 	} catch (error) {
-		// $toast.error('Ocorreu um erro ao buscar o evento')
+		$toast.error('An error ocurrend while fetching the event')
 	} finally {
 		loading.value = false
 	}
@@ -417,7 +423,8 @@ const updateEvent = async () => {
 	)
 
 	if (req.status === 200) {
-		// $toast.success('chamado registrado com sucesso!')
+		$toast.success('Event updated successfully')
+		emits('refreshData')
 		return
 	}
 
@@ -425,14 +432,15 @@ const updateEvent = async () => {
 }
 
 const addNewEvent = async () => {
-	const req = await $fetch.raw(`api/v1/agendas/agenda-evento/inserir`, {
+	const req = await $fetch.raw(`/api/calendar-event`, {
 		method: 'POST',
 		body: formEvent,
 		ignoreResponseError: true,
 	})
 
 	if (req.status === 201) {
-		// $toast.success('chamado registrado com sucesso!')
+		$toast.success('Event created successfully')
+		emits('refreshData')
 		return
 	}
 

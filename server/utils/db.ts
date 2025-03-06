@@ -13,7 +13,7 @@ function createTables() {
                     userName TEXT NOT NULL,
                     fullName TEXT NOT NULL,
                     email TEXT NOT NULL,
-                    avatar TEXT NOT NULL
+                    avatar TEXT
                 );
             `,
 				(err) => {
@@ -77,7 +77,7 @@ function insertData() {
 					'alice123',
 					'Alice Johnson',
 					'alice@example.com',
-					'https://example.com/avatars/alice.png',
+					'https://media2.dev.to/dynamic/image/width=800%2Cheight=%2Cfit=scale-down%2Cgravity=auto%2Cformat=auto/http%3A%2F%2Fplacekitten.com%2F250%2F250',
 				]
 			)
 
@@ -87,7 +87,7 @@ function insertData() {
 					'bob456',
 					'Bob Smith',
 					'bob@example.com',
-					'https://example.com/avatars/bob.png',
+					'http://placebeard.it/223/150?5',
 				]
 			)
 
@@ -155,4 +155,5 @@ function insertData() {
 	}
 })()
 
+export type Tables = 'user' | 'calendar' | 'calendar_event'
 export const database = db

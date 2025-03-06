@@ -12,7 +12,6 @@ export default defineEventHandler(async (event) => {
 		const sql = 'SELECT * FROM calendar'
 
 		const response = await getData<ICalendar[]>(sql)
-		console.log(typeof data?.userId)
 
 		const userCalendars = response.filter(
 			(calendar) => calendar.userId === data?.userId
@@ -20,8 +19,6 @@ export default defineEventHandler(async (event) => {
 		const othersCalendars = response.filter(
 			(calendar) => calendar.userId !== data?.userId
 		)
-
-		console.log(userCalendars)
 
 		return {
 			userCalendars,

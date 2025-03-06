@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="2xl:text-md mt-3 flex max-h-screen w-[30%] flex-col overflow-y-auto pr-2 text-sm scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300"
+		class="2xl:text-md mt-3 flex max-h-screen w-[31%] flex-col overflow-y-auto pr-2 text-sm scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300"
 	>
 		<!-- <LazyUiPartialSistemaAreaTrabalhoSkeletonLoader v-if="carregando" /> -->
 		<template>
@@ -22,14 +22,14 @@
 					inline
 					:show-week="false"
 					size="small"
-					class="w-full sm:w-[30rem]"
+					class="w-full"
 					:pt="CALENDAR_PT"
 				/>
 			</div>
 			<div>
 				<ClientOnly>
 					<HeadlessDisclosure
-						v-for="(agenda, idx) in menuCalendars"
+						v-for="(menu, idx) in menuCalendars"
 						:key="idx"
 						v-slot="{open}"
 						as="div"
@@ -37,16 +37,16 @@
 						class="mb-3"
 					>
 						<HeadlessDisclosureButton
-							:id="agenda.nome.replace(' ', '_')"
+							:id="menu.name.replace(' ', '_')"
 							as="div"
-							class="2xl:text-md mb-2 flex w-full cursor-pointer select-none items-center justify-between rounded-md py-1 pl-2 pr-5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-200"
+							class="2xl:text-md mb-2 flex w-full cursor-pointer select-none items-center justify-between rounded-md py-1 pl-2 pr-5 text-sm font-semibold text-slate-600 transition-colors hover:bg-green-100"
 						>
-							{{ agenda.nome }}
+							{{ menu.name }}
 							<div class="flex items-center gap-2 2xl:gap-4">
 								<Icon
-									v-if="agenda.nome === 'Minhas agendas'"
-									id="addAgendaBtn"
-									v-tooltip.top="'add agenda'"
+									v-if="menu.name === 'My Calendars'"
+									id="addCalendarBtn"
+									v-tooltip.top="'Add calendar'"
 									name="mdi:plus"
 									size="26"
 									@click.stop="openCalendarForm"
@@ -72,38 +72,38 @@
 								as="div"
 							>
 								<label
-									v-for="itemAgenda in agenda.items"
-									:key="itemAgenda.id"
-									:for="`calendar_${itemAgenda.id}`"
-									class="group flex h-9 w-full cursor-pointer items-center justify-between gap-4 rounded-md px-2 py-1 text-xs text-slate-600 transition-all hover:bg-slate-100 2xl:text-sm"
+									v-for="calendar in menu.items"
+									:key="calendar.id"
+									:for="`calendar_${calendar.id}`"
+									class="group flex h-9 w-full cursor-pointer items-center justify-between gap-4 rounded-md px-2 py-1 text-xs text-slate-600 transition-all hover:bg-green-50 2xl:text-sm"
 								>
 									<span class="flex gap-2">
 										<Checkbox
 											v-model="selectedCalendars"
-											:input-id="`calendar_${itemAgenda.id}`"
-											:value="itemAgenda"
+											:input-id="`calendar_${calendar.id}`"
+											:value="calendar"
 											:pt="{
 												box: {
 													style: {
-														backgroundColor: itemAgenda.color,
-														borderColor: itemAgenda.color,
+														backgroundColor: calendar.color,
+														borderColor: calendar.color,
 													},
 												},
 											}"
 										/>
 										<span class="mt-1">
-											{{ itemAgenda.name }}
+											{{ calendar.name }}
 										</span>
 									</span>
 									<button
 										class="rounded-full p-1 transition-colors duration-200 ease-out active:bg-slate-300"
-										@click.stop="openPopup($event, itemAgenda, agenda.nome)"
+										@click.stop="openPopup($event, calendar, menu.name)"
 									>
 										<Icon
 											name="mdi:dots-vertical"
 											size="20"
 											class="hidden cursor-pointer transition-all group-hover:block"
-											title="Opções"
+											title="Options"
 										/>
 									</button>
 								</label>
@@ -116,40 +116,40 @@
 						class="w-full *:rounded-md *:px-2 *:py-1 *:text-sm *:transition-all"
 					>
 						<li
-							class="flex cursor-pointer items-center gap-2 hover:bg-slate-100"
+							class="flex cursor-pointer items-center gap-2 hover:bg-green-50"
 							@click="showOnlyOneCalendar"
 						>
 							<Icon
 								name="mdi:eye-outline"
-								class="text-slate-600"
+								class="text-green-700"
 							/>
-							Exbir somente esta
+							show only this
 							<Icon
 								v-if="onlyOneCalendarSelected"
 								name="mdi:check"
-								class="text-blue-600"
+								class="text-green-600"
 							/>
 						</li>
 						<li
-							v-if="calendarClickedOptions.menu !== 'Outras agendas'"
-							class="flex cursor-pointer items-center gap-2 hover:bg-slate-100"
+							v-if="calendarClickedOptions.menu !== 'Other Calendars'"
+							class="flex cursor-pointer items-center gap-2 hover:bg-green-50"
 							@click="confirmDeleteModal = true"
 						>
 							<Icon
 								name="mdi:trash-outline"
-								class="text-slate-600"
+								class="text-green-700"
 							/>
-							Apagar agenda
+							Delete calendar
 						</li>
 						<li
-							class="flex cursor-pointer items-center gap-2 hover:bg-slate-100"
+							class="flex cursor-pointer items-center gap-2 hover:bg-green-50"
 							@click="openCalendarForm(false)"
 						>
 							<Icon
 								name="mdi:info-outline"
-								class="text-slate-600"
+								class="text-green-700"
 							/>
-							Informações da agenda
+							Calendar info
 						</li>
 					</ul>
 				</Popover>
@@ -289,8 +289,8 @@ const menuCalendars = computed(() => {
 	]
 
 	return [
-		{nome: 'My Calendars', items: calendarUsersMap.value},
-		{nome: 'Other Calendars', items: anotherCalendarsMap.value},
+		{name: 'My Calendars', items: calendarUsersMap.value},
+		{name: 'Other Calendars', items: anotherCalendarsMap.value},
 	]
 })
 
@@ -322,7 +322,7 @@ watch(calendars, () => {
 
 const CALENDAR_PT = {
 	root: {
-		class: '!text-xs !p-2',
+		class: '!text-xs !p-2 !overflow-hidden',
 	},
 	monthTitle: {
 		class: '!text-xs !font-semibold',
@@ -331,7 +331,7 @@ const CALENDAR_PT = {
 		class: '!text-xs !ml-1',
 	},
 	tableBody: {
-		class: '!text-xs',
+		class: '!text-xs !overflow-hidden',
 	},
 	tableheaderrow: {
 		class: '!hidden',

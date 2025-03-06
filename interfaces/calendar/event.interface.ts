@@ -1,3 +1,5 @@
+import type { Weekday } from "rrule"
+
 export enum EventPriority {
 	HIGH = 'High',
 	MEDIUM = 'Medium',
@@ -15,8 +17,31 @@ export interface ICalendarEvent {
 	notify?: boolean
 	recurrencyRule?: string
 	calendarId?: number
-	userId?: string
+	userId?: number
 	participantsIds?: string
 	color?: string
 	deleted?: boolean
+}
+
+export type FrequencyString =
+	| 'HOURLY'
+	| 'DAILY'
+	| 'WEEKLY'
+	| 'MONTHLY'
+	| 'YEARLY'
+
+export type WeekDayOp = {
+	name: string
+	value: Weekday
+}
+
+export interface IRecurrencyForm {
+	recurrency: FrequencyString
+	repeatForEach: number
+	repeatDay?: WeekDayOp[]
+	endType?: 'never' | 'date' | 'occurrences'
+	endDate?: Date
+	occurrenceNumber?: number
+	mounthDay?: number
+	mounth?: number
 }

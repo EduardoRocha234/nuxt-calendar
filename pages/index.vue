@@ -1,6 +1,5 @@
 <template>
-	<div class="p-6">
-		<!-- <UiSectionCard> -->
+	<div class="m-6 p-4 shadow-lg rounded-md">
 		<!-- <template #header>
 				<ClientOnly>
 					<LazyUiPartialSistemaAreaTrabalhoCabecalho
@@ -49,19 +48,18 @@
 				</ClientOnly>
 			</div>
 		</div>
-		<!-- </UiSectionCard> -->
-		<!-- <LazyUiPartialSistemaAreaTrabalhoModalDetalhesEvento
-			ref="modalDetalhesEvento"
-			@atualizar-evento="abrirModalAtualizarEvento"
-			@atualizar-dados="recarregarEventos"
-		/> -->
+		<LazyAppPartialCalendarEventDetailsModal
+			ref="eventDetailsModal"
+			@refresh-event="openUpdateEventModal"
+			@refresh-data="refreshEvents"
+		/>
 		<LazyAppPartialCalendarEventForm
 			:id="idEventoEditar"
 			v-model="modalAdicionarAtividadeVisivel"
 			:calendars="todasAgendas"
 			:star-date="novoEventoData.dataInicio"
 			:end-date="novoEventoData.dataTermino"
-			@refresh-data="recarregarEventos"
+			@refresh-data="refreshEvents"
 		/>
 	</div>
 </template>
@@ -91,9 +89,11 @@ import type {
 	ICalendarEvent,
 	ICalendarMenus,
 } from '~/interfaces'
+import type ModalDetalhes from '~/partials/calendar-event/EventDetailsModal.vue'
 
 const {$toast} = useNuxtApp()
 const dayjs = useDayjs()
+const user = useUser()
 
 const carregandoAgendas = ref<boolean>(false)
 const carregandoEventos = ref<boolean>(false)
@@ -104,9 +104,7 @@ const calendarioMenorModel = ref<Date | null>(null)
 const eventos = ref<EventInput[]>([])
 const agendasSelecionadas = ref<ICalendarMenus[]>([])
 const todasAgendas = ref<ICalendar[]>([])
-// const modalDetalhesEvento = ref<InstanceType<
-// 	typeof ModalDetalhesEvento
-// > | null>(null)
+const eventDetailsModal = ref<InstanceType<typeof ModalDetalhes> | null>(null)
 const idEventoEditar = ref<string | null>(null)
 const parametrosGetEvento = reactive<{
 	agendasIds: string
@@ -209,7 +207,7 @@ const ajustarDataParaExibicao = (
 	return dayjs(dataTermino).toDate()
 }
 
-const abrirModalAtualizarEvento = (id: string) => {
+const openUpdateEventModal = (id: string) => {
 	idEventoEditar.value = id
 	modalAdicionarAtividadeVisivel.value = true
 }
@@ -263,17 +261,17 @@ const fullcalendarProps = computed<CalendarOptions>(() => ({
 		const x = info.jsEvent.clientX - offsetX
 		const y = info.jsEvent.clientY - offsetY
 
-		// await modalDetalhesEvento.value?.abrirModalDetalhesEvento({
-		// 	posicaoX: x,
-		// 	posicaoY: y,
-		// 	evento: info.event,
-		// })
+		await eventDetailsModal.value?.openDetailsModal({
+			positionX: x,
+			positionY: y,
+			event: info.event,
+		})
 	},
 	eventMouseEnter: abrirPopupEvento,
 	datesSet: buscarEventosProximoPeriodo,
 }))
 
-const recarregarEventos = async () => {
+const refreshEvents = async () => {
 	periodosJaBuscados.value = []
 	eventos.value = []
 
@@ -305,7 +303,7 @@ const fethAgendas = async () => {
 	periodosJaBuscados.value = []
 
 	const parametros = {
-		userId: 1,
+		userId: user.value?.id,
 	}
 
 	try {
@@ -339,9 +337,9 @@ const fethAgendas = async () => {
 			return
 		}
 
-		// $toast.error('Ocorreu um erro inesperado ao buscar as agendas')
+		$toast.error('An error occurred while trying to fetch your calendars')
 	} catch (error) {
-		// $toast.error('Ocorreu um erro inesperado ao buscar as agendas')
+		$toast.error('An error occurred while trying to fetch your calendars')
 	} finally {
 		carregandoAgendas.value = false
 	}
@@ -383,9 +381,9 @@ const buscarEventos = async () => {
 			]
 			return
 		}
-		// $toast.error('Ocorreu um erro inesperado ao buscar seus eventos')
+		$toast.error('An error occurred while fetching your events')
 	} catch (error) {
-		// $toast.error('Ocorreu um erro inesperado ao buscar seus eventos')
+		$toast.error('An error occurred while fetching your events')
 	} finally {
 		carregandoEventos.value = false
 	}
@@ -416,7 +414,7 @@ const mapearParaEventoFullCalendar = (e: ICalendarEvent) =>
 		allDay: e.allDay,
 		backgroundColor: e.color,
 		extendedProps: {
-			descricao: e.description,
+			description: e.description,
 			calendarId: e.calendarId,
 			priority: e.priority,
 			notify: e.notify,

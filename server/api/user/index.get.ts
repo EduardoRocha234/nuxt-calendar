@@ -1,4 +1,4 @@
-import {IUser} from '~/interfaces'
+import type {IUser} from '~/interfaces'
 
 export default defineEventHandler(async () => {
 	try {
