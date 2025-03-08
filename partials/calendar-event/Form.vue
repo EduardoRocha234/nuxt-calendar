@@ -7,7 +7,7 @@
 		:style="{width: '80vw'}"
 	>
 		<div
-			class="flex h-full w-full gap-4 overflow-y-auto px-2 p-6 scrollbar-thin xl:h-[22rem] 2xl:h-[40rem]"
+			class="flex h-full w-full gap-4 overflow-y-auto px-2 py-6 scrollbar-thin xl:h-[22rem] 2xl:h-[40rem]"
 		>
 			<div
 				class="h-full w-full flex-1"
@@ -75,7 +75,7 @@
 					<FloatLabel>
 						<Textarea
 							v-model="formEvent.description"
-							loading="showLoading"
+							:loading="showLoading"
 							fluid
 						/>
 						<label for="calendarId">Description</label>
@@ -205,8 +205,8 @@ import {
 	type ICalendar,
 	type ICalendarEvent,
 	type IUser,
-} from '~/interfaces';
-import * as zod from 'zod';
+} from '~/interfaces'
+import * as zod from 'zod'
 
 const props = defineProps<{
 	id?: string | null
@@ -218,6 +218,8 @@ const props = defineProps<{
 const {calendars, starDate, endDate} = toRefs(props)
 
 const user = useUser()
+
+console.log()
 
 const emits = defineEmits<{
 	(event: 'delete', id: string): void
@@ -244,7 +246,7 @@ const priorityOptions = Object.values(EventPriority).map((value) => ({
 }))
 
 const initialValues: ICalendarEvent = {
-	id: 0,
+	id: undefined,
 	name: undefined,
 	description: undefined,
 	priority: undefined,
@@ -321,10 +323,7 @@ const validation = zod.object({
 
 const {valid, getError, validate, clearErrors, errors} = useFormValidation(
 	validation,
-	formEvent,
-	{
-		modo: 'lazy',
-	}
+	formEvent
 )
 
 const sendForm = async () => {
@@ -332,8 +331,6 @@ const sendForm = async () => {
 		formEvent.participantsIds = selectedGuests.value.join(',')
 
 		await validate()
-
-		console.log(errors)
 
 		if (!valid.value) return
 
@@ -432,6 +429,7 @@ const updateEvent = async () => {
 }
 
 const addNewEvent = async () => {
+	console.log(formEvent)
 	const req = await $fetch.raw(`/api/calendar-event`, {
 		method: 'POST',
 		body: formEvent,

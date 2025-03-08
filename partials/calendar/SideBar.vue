@@ -154,13 +154,13 @@
 					</ul>
 				</Popover>
 			</div>
-			<!-- <LazyUiPartialAgendaAgendaForm
+			<LazyAppPartialCalendarForm
 				v-model="calendarFormVisible"
-				:agenda-id="calendarClickedOptions.agenda?.id"
-				@atualizar-dados="() => emits('searchCalendars')"
-				@deletar="() => confirmDelete()"
+				:calendar-id="calendarClickedOptions.calendar?.id"
+				@refresh-data="emits('searchCalendars')"
+				@delete="confirmDelete"
 			/>
-			<LazyUiModalConfirmarExclusaoV1
+			<!-- <LazyUiModalConfirmarExclusaoV1
 				v-model="confirmDeleteModal"
 				:on-close="() => closeDeleteModal()"
 				:on-confirm="() => confirmDelete()"

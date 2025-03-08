@@ -110,9 +110,7 @@
 				{{ clickedEvent?.extendedProps.description }}
 			</div>
 			<div
-				v-if="
-					clickedEvent?.extendedProps.priority
-				"
+				v-if="clickedEvent?.extendedProps.priority"
 				class="mb-2 flex max-h-20 w-full flex-col gap-1 overflow-auto rounded-md bg-slate-100 p-2 text-sm"
 			>
 				<span class="flex items-center gap-2">
@@ -138,9 +136,7 @@
 						/>
 						<span
 							>{{ guestsEmails.length }}
-							{{
-								guestsEmails.length > 1 ? 'guests' : 'guest'
-							}}</span
+							{{ guestsEmails.length > 1 ? 'guests' : 'guest' }}</span
 						>
 					</div>
 					<Icon
@@ -239,13 +235,6 @@ const guestsData = ref<IUser[]>([])
 const onUpdateEvent = () => {
 	emits('refreshEvent', clickedEvent!.value!.id)
 	visible.value = false
-}
-
-const generateRandomColor = () => {
-	const r = Math.floor(Math.random() * 256)
-	const g = Math.floor(Math.random() * 256)
-	const b = Math.floor(Math.random() * 256)
-	return `rgb(${r}, ${g}, ${b})`
 }
 
 const guestsEmails = computed(() => {

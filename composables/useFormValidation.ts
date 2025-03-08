@@ -4,9 +4,9 @@ import { get, groupBy } from 'lodash-es'
 export function useFormValidation<T extends ZodTypeAny>(
 	schema: T,
 	form: MaybeRefOrGetter<Record<string, unknown>>,
-	option?: { modo: 'eager' | 'lazy' },
+	option?: { mode: 'eager' | 'lazy' },
 ) {
-	const optionParam = Object.assign({}, { modo: 'lazy' }, option)
+	const optionParam = Object.assign({}, { mode: 'lazy' }, option)
 
 	const valid = ref<boolean>(true)
 	const errors = ref<Record<string, z.ZodIssue[]> | null>(null)
@@ -47,7 +47,7 @@ export function useFormValidation<T extends ZodTypeAny>(
 			| string
 			| undefined
 
-	if (optionParam.modo === 'eager') {
+	if (optionParam.mode === 'eager') {
 		resume()
 	}
 

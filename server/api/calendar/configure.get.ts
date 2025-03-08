@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
 		console.log(error)
 		throw createError({
 			status: 500,
-			message: 'Error to get users',
+			message: 'Error to found calendars',
 		})
 	}
 })

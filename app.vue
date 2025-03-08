@@ -1,12 +1,13 @@
 <template>
 	<div>
 		<Dialog
-			v-model:visible="visible"
+			v-model:visible="modalVisible"
 			header="Hello! Good to see you here"
 			:style="{width: '25rem'}"
 			position="top"
-			:modal="true"
+			modal
 			:draggable="false"
+			:closable="false"
 		>
 			<span class="text-surface-500 block mb-1"
 				>Type some infos to use this calendar</span
@@ -20,6 +21,7 @@
 					id="fullname"
 					v-model="newUser.fullName"
 					label="Fullname"
+					:error="getError('fullName')"
 					required
 				/>
 			</div>
@@ -28,6 +30,7 @@
 					id="email"
 					v-model="newUser.email"
 					label="email"
+					:error="getError('email')"
 					required
 				/>
 			</div>
@@ -35,7 +38,8 @@
 				<Button
 					type="button"
 					label="Let's go"
-					@click="test"
+					:disabled="!valid"
+					@click="createUser"
 				/>
 			</div>
 		</Dialog>
@@ -46,18 +50,39 @@
 
 <script setup lang="ts">
 import type {IUser} from '~/interfaces'
+import {z} from 'zod'
 
 const {$toast} = useNuxtApp()
 
-const visible = ref(true)
+const modalVisible = ref<boolean>(true)
 const user = useUser()
 
 const newUser = reactive<Pick<IUser, 'fullName' | 'email'>>({
-	fullName: '',
-	email: '',
+	fullName: 'teste',
+	email: 'duduraleixo20005@gmail.com',
 })
 
-const test = async () => {
+const schema = z.object({
+	fullName: z
+		.string()
+		.nonempty({
+			message: 'Fullname is required',
+		})
+		.refine((val) => val.trim() !== '', {
+			message: 'Fullname cannot be empty',
+		}),
+	email: z.string().email(),
+})
+
+const {valid, validate, getError} = useFormValidation(schema, newUser, {
+	mode: 'eager',
+})
+
+const createUser = async () => {
+	await validate()
+
+	if (!valid.value) return
+
 	const req = await $fetch.raw<IUser>(`/api/user`, {
 		method: 'POST',
 		body: newUser,
@@ -65,8 +90,8 @@ const test = async () => {
 	})
 
 	if (req.status === 200) {
-		$toast.success('Event created successfully')
-		visible.value = false
+		$toast.success('Your user has been created successfully')
+		modalVisible.value = false
 		user.value = req._data!
 		return
 	}

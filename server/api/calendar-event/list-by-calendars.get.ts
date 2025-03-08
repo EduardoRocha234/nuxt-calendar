@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
 	} catch (error) {
 		throw createError({
 			status: 500,
-			message: 'Error events by calendars',
+			message: 'Error to get events by calendars',
 		})
 	}
 })

@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
 	} catch (error) {
 		throw createError({
 			status: 500,
-			message: 'Error to get users',
+			message: 'Error to get event',
 		})
 	}
 })

@@ -10,9 +10,10 @@ export default defineEventHandler(async (event) => {
 
 		return new Response(null, {status: 201})
 	} catch (error) {
+		console.log(error)
 		throw createError({
 			status: 500,
-			message: 'Error to get users',
+			message: 'Error to create event',
 		})
 	}
 })
