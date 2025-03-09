@@ -44,6 +44,14 @@
 			</div>
 		</Dialog>
 		<Toast />
+		<ConfirmDialog>
+			<template #icon>
+				<Icon
+					name="solar:danger-circle-linear"
+					size="30"
+				/>
+			</template>
+		</ConfirmDialog>
 		<NuxtPage />
 	</div>
 </template>

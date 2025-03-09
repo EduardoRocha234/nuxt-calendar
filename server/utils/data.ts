@@ -33,3 +33,17 @@ export const insertData = (table: Tables, data: Record<string, any>) => {
 		})
 	})
 }
+
+export const deleteData = (table: Tables, id: number): Promise<void> => {
+	return new Promise<void>((resolve, reject) => {
+		const query = `DELETE FROM ${table} WHERE id = ${id}`
+
+		database.run(query, function (err) {
+			if (err) {
+				reject(err)
+			} else {
+				resolve()
+			}
+		})
+	})
+}

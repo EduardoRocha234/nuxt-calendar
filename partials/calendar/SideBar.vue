@@ -133,7 +133,7 @@
 						<li
 							v-if="calendarClickedOptions.menu !== 'Other Calendars'"
 							class="flex cursor-pointer items-center gap-2 hover:bg-green-50"
-							@click="confirmDeleteModal = true"
+							@click="onOpenDeleteModal"
 						>
 							<Icon
 								name="mdi:trash-outline"
@@ -176,6 +176,7 @@
 					</div>
 				</template>
 			</LazyUiModalConfirmarExclusaoV1> -->
+			<ConfirmDialog />
 		</template>
 	</div>
 </template>
@@ -194,7 +195,7 @@ const props = defineProps<{
 }>()
 
 const {calendars, loading} = toReactive(props)
-const {$toast} = useNuxtApp()
+const {$toast, $useConfirm} = useNuxtApp()
 
 const emits = defineEmits<{
 	(evento: 'addEvent'): void
@@ -208,7 +209,6 @@ const calendarModel = defineModel<Date | null>('calendar', {
 	default: null,
 })
 const calendarFormVisible = ref<boolean>(false)
-const confirmDeleteModal = ref<boolean>(false)
 const loadingDelete = ref<boolean>(false)
 const popup = ref<InstanceType<typeof Popover> | null>(null)
 
@@ -227,10 +227,19 @@ const openPopup = (event: Event, calendar: ICalendar, menu: string) => {
 	calendarClickedOptions.menu = menu
 }
 
+const onOpenDeleteModal = () => {
+	const {openDeleteModal} = $useConfirm
+
+	openDeleteModal({
+		accept: confirmDelete,
+		reject: closeDeleteModal,
+		message: `Do you want to delete this calendar? All activities related to it will be deleted!`,
+	})
+}
+
 const closeDeleteModal = () => {
 	calendarClickedOptions.calendar = undefined
 	calendarClickedOptions.menu = undefined
-	confirmDeleteModal.value = false
 }
 
 const confirmDelete = async () => {
@@ -238,7 +247,7 @@ const confirmDelete = async () => {
 
 	loadingDelete.value = true
 	const res = await $fetch.raw(
-		`/api/calendar/${calendarClickedOptions.calendar.id}/excluir`,
+		`/api/calendar/${calendarClickedOptions.calendar.id}`,
 		{
 			ignoreResponseError: false,
 			method: 'DELETE',
@@ -247,7 +256,7 @@ const confirmDelete = async () => {
 	loadingDelete.value = false
 
 	if (res.ok) {
-		// $toast.success('Agenda deletada com sucesso')
+		$toast.success('Calendar deleted with success')
 		emits('searchCalendars')
 	}
 	closeDeleteModal()

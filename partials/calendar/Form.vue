@@ -26,6 +26,7 @@
 						:invalid="!!getError('description')"
 						fluid
 						rows="4"
+						:readonly="readOnly"
 					/>
 					<label for="calendarId">Description</label>
 					<span
@@ -40,6 +41,7 @@
 				<ColorPicker
 					name="color"
 					v-model="calendarForm.color"
+					:disabled="readOnly"
 				/>
 			</div>
 		</div>
@@ -153,7 +155,7 @@ const fetchCalendarById = async () => {
 	try {
 		loading.value = true
 		const response = await $fetch.raw<ICalendar>(
-			`api/v1/agendas/agenda/${calendarId.value}`,
+			`api/calendar/${calendarId.value}`,
 			{
 				ignoreResponseError: true,
 			}

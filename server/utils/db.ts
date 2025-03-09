@@ -98,7 +98,7 @@ function insertData() {
 
 			db.run(
 				'INSERT INTO calendar (userId, name, description, color, deleted) VALUES (?, ?, ?, ?, ?)',
-				[2, 'Personal Calendar', 'Calendar for personal events', '#00FF00', 0]
+				[1, 'Personal Calendar', 'Calendar for personal events', '#00FF00', 0]
 			)
 
 			db.run(

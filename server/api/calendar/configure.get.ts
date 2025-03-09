@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
 	const {data} = await getValidatedQuery(event, schema.safeParse)
 
 	try {
-		const sql = 'SELECT * FROM calendar'
+		const sql = 'SELECT * FROM calendar WHERE deleted = 0'
 
 		const response = await getData<ICalendar[]>(sql)
 

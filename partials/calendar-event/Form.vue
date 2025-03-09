@@ -410,14 +410,11 @@ const getEventById = async () => {
 }
 
 const updateEvent = async () => {
-	const req = await $fetch.raw(
-		`api/v1/agendas/agenda-evento/${props.id}/atualizar`,
-		{
-			method: 'PUT',
-			body: formEvent,
-			ignoreResponseError: true,
-		}
-	)
+	const req = await $fetch.raw(`/api/calendar-event${props.id}/atualizar`, {
+		method: 'PUT',
+		body: formEvent,
+		ignoreResponseError: true,
+	})
 
 	if (req.status === 200) {
 		$toast.success('Event updated successfully')
@@ -429,7 +426,6 @@ const updateEvent = async () => {
 }
 
 const addNewEvent = async () => {
-	console.log(formEvent)
 	const req = await $fetch.raw(`/api/calendar-event`, {
 		method: 'POST',
 		body: formEvent,
@@ -465,6 +461,7 @@ watch(visible, async (visivel) => {
 		Object.assign(formEvent, initialValues)
 		recurrencyEvent.value = false
 		selectedGuests.value = []
+		formEvent.userId = user.value?.id
 		formEvent.startDate = starDate.value
 		formEvent.endDate = endDate.value
 	}
