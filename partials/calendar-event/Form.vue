@@ -219,8 +219,6 @@ const {calendars, startDate, endDate} = toRefs(props)
 
 const user = useUser()
 
-console.log()
-
 const emits = defineEmits<{
 	(event: 'delete', id: string): void
 	(event: 'refreshData'): () => void

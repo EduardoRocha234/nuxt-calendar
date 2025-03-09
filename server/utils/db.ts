@@ -29,7 +29,6 @@ function createTables() {
                     name TEXT NOT NULL,
                     description TEXT,
                     color TEXT NOT NULL,
-                    deleted BOOLEAN NOT NULL DEFAULT 0,
                     FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE ON UPDATE CASCADE
                 );
             `,
@@ -53,7 +52,6 @@ function createTables() {
                     allDay BOOLEAN NOT NULL,
                     recurrencyRule TEXT,
                     guestsIds TEXT,
-                    deleted BOOLEAN NOT NULL DEFAULT 0,
                     FOREIGN KEY (calendarId) REFERENCES calendar(id) ON DELETE CASCADE ON UPDATE CASCADE,
                     FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE ON UPDATE CASCADE
                 );
@@ -92,17 +90,17 @@ function insertData() {
 			)
 
 			db.run(
-				'INSERT INTO calendar (userId, name, description, color, deleted) VALUES (?, ?, ?, ?, ?)',
-				[1, 'Work Calendar', 'Calendar for work-related events', '#FF0000', 0]
+				'INSERT INTO calendar (userId, name, description, color) VALUES (?, ?, ?, ?)',
+				[1, 'Work Calendar', 'Calendar for work-related events', '#FF0000']
 			)
 
 			db.run(
-				'INSERT INTO calendar (userId, name, description, color, deleted) VALUES (?, ?, ?, ?, ?)',
-				[1, 'Personal Calendar', 'Calendar for personal events', '#00FF00', 0]
+				'INSERT INTO calendar (userId, name, description, color) VALUES (?, ?, ?, ?)',
+				[1, 'Personal Calendar', 'Calendar for personal events', '#00FF00']
 			)
 
 			db.run(
-				'INSERT INTO calendar_event (calendarId, priority, userId, name, description, startDate, endDate, notify, allDay, recurrencyRule, guestsIds, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+				'INSERT INTO calendar_event (calendarId, priority, userId, name, description, startDate, endDate, notify, allDay, recurrencyRule, guestsIds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 				[
 					1,
 					'High',
@@ -115,12 +113,11 @@ function insertData() {
 					0,
 					null,
 					'1,2',
-					0,
 				]
 			)
 
 			db.run(
-				'INSERT INTO calendar_event (calendarId, priority, userId, name, description, startDate, endDate, notify, allDay, recurrencyRule, guestsIds, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+				'INSERT INTO calendar_event (calendarId, priority, userId, name, description, startDate, endDate, notify, allDay, recurrencyRule, guestsIds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 				[
 					2,
 					'Medium',
@@ -133,7 +130,6 @@ function insertData() {
 					0,
 					null,
 					'2',
-					0,
 				]
 			)
 

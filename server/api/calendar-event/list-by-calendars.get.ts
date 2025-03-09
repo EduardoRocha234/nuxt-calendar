@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
             FROM calendar_event event
             LEFT JOIN calendar calendar ON event.calendarId = calendar.id
             WHERE event.calendarId IN (${calendarsIds}) 
-            AND event.deleted = 0
+        
 
         `
 

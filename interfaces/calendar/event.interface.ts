@@ -20,7 +20,6 @@ export interface ICalendarEvent {
 	userId?: number
 	guestsIds?: string
 	color?: string
-	deleted?: boolean
 }
 
 export type FrequencyString =

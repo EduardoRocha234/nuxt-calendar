@@ -4,7 +4,6 @@ export interface ICalendar {
 	color?: string
 	description?: string
 	userId?: number
-	deleted?: boolean
 }
 
 export interface ICalendarConfigForUser {
