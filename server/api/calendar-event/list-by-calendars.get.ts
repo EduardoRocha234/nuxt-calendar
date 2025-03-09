@@ -1,8 +1,8 @@
 import {ICalendarEvent} from '~/interfaces'
 
 export default defineEventHandler(async (event) => {
-	const {agendasIds, endDate, startDate} = getQuery(event) as {
-		agendasIds: number[]
+	const {calendarsIds, endDate, startDate} = getQuery(event) as {
+		calendarsIds: number[]
 		startDate: Date
 		endDate: Date
 	}
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
             SELECT event.*, calendar.color
             FROM calendar_event event
             LEFT JOIN calendar calendar ON event.calendarId = calendar.id
-            WHERE event.calendarId IN (${agendasIds}) 
+            WHERE event.calendarId IN (${calendarsIds}) 
             AND event.deleted = 0
 
         `

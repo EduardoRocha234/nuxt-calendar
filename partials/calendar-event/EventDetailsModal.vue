@@ -36,7 +36,7 @@
 					<button
 						title="Delete event"
 						class="flex items-center justify-center rounded-full p-2 transition-colors hover:bg-slate-100"
-						@click="openConfirmDeleteModal"
+						@click="onOpenDeleteModal"
 					>
 						<Icon
 							name="mdi:trash"
@@ -67,19 +67,19 @@
 				>
 			</div>
 
-			<!-- <div
-				v-if="dadosResponsavel"
+			<div
+				v-if="responsibleData"
 				class="group mb-2 max-h-32 w-full overflow-auto rounded-md bg-slate-100 p-2 text-sm"
 			>
 				<div class="flex items-center justify-between pr-2">
 					<div class="flex items-center gap-2">
 						<Avatar
 							:label="
-								!dadosResponsavel?.avatar
-									? dadosResponsavel.nomeCompleto[0].toUpperCase()
+								!responsibleData?.avatar
+									? responsibleData.fullName[0].toUpperCase()
 									: undefined
 							"
-							:image="dadosResponsavel.avatar || undefined"
+							:image="responsibleData.avatar || undefined"
 							shape="circle"
 							:pt="{
 								image: {
@@ -89,20 +89,20 @@
 						/>
 						<div class="flex flex-col">
 							<span class="font-semibold">
-								{{ dadosResponsavel.nomeCompleto }}
+								{{ responsibleData.fullName }}
 							</span>
-							<span class="text-xs">Responsável</span>
+							<span class="text-xs">Responsible</span>
 						</div>
 					</div>
 					<Icon
 						v-if="isSupported"
 						name="mdi:content-copy"
 						class="hidden cursor-pointer group-hover:block"
-						title="Copiar e-mail do responsável"
-						@click(dadosResponsavel.email)"
+						title="Copy responsible email"
+						@click="copy(responsibleData.email)"
 					/>
 				</div>
-			</div> -->
+			</div>
 			<div
 				v-if="clickedEvent?.extendedProps.description"
 				class="mb-2 max-h-32 w-full overflow-auto rounded-md bg-slate-100 p-2 text-sm"
@@ -143,7 +143,7 @@
 						v-if="isSupported"
 						name="mdi:content-copy"
 						class="hidden cursor-pointer group-hover:block"
-						title="Cupy email address from guests"
+						title="Copy email address from guests"
 						@click="copy(guestsEmails.join(', '))"
 					/>
 				</div>
@@ -188,29 +188,12 @@
 			</div>
 		</div>
 	</Dialog>
-	<!-- <LazyUiModalConfirmarExclusaoV1
-		v-model="deleteConfirmModal"
-		header="Excluir evento"
-		:on-close="() => closeConfirmDeleteModal()"
-		:on-confirm="() => confirmDelete()"
-	>
-		<template #content>
-			<div class="flex flex-col">
-				<span>Deseja excluir este evento?</span>
-				<span
-					v-if="clickedEvent?.extendedProps.recorrencia"
-					class="text-sm font-bold"
-					>Ao excluir esta evento todas as recorrências deste evento serão
-					deletados!</span
-				>
-			</div>
-		</template>
-	</LazyUiModalConfirmarExclusaoV1> -->
 </template>
 
 <script setup lang="ts">
 import {EventImpl} from '@fullcalendar/core/internal'
 import {useClipboard} from '@vueuse/core'
+import type Dialog from 'primevue/dialog'
 import type {IUser} from '~/interfaces'
 
 const emits = defineEmits<{
@@ -218,18 +201,18 @@ const emits = defineEmits<{
 	(event: 'refreshData'): void
 }>()
 
-const {$toast} = useNuxtApp()
+const {$toast, $useConfirm} = useNuxtApp()
+
 const dayjs = useDayjs()
-const usuario = 1
-const modalRef = ref<any>(null)
+const user = useUser()
+const modalRef = ref<InstanceType<typeof Dialog> | null>(null)
 
 const {copy, isSupported} = useClipboard()
 
 const visible = ref<boolean>(false)
-const deleteConfirmModal = ref<boolean>(false)
 const clickedEvent = ref<EventImpl | null>(null)
 const modalPosition = reactive({x: 0, y: 0})
-// const dadosResponsavel = ref<Usuario | null>(null)
+const responsibleData = ref<IUser | null>(null)
 const guestsData = ref<IUser[]>([])
 
 const onUpdateEvent = () => {
@@ -259,13 +242,13 @@ const adjustDateForShow = (
 	return dayjs(endDate).format('dddd, D [de] MMMM [de] YYYY, h:mmA')
 }
 
-const fetchResponsibleData = async (id: string) => {
-	const res = await $fetch.raw<IUser>(`/api/v1/sistema/usuario/${id}`, {
+const fetchResponsibleData = async (id: number) => {
+	const res = await $fetch.raw<IUser>(`/api/user/${id}`, {
 		ignoreResponseError: false,
 	})
 
 	if (res.ok && res._data) {
-		// dadosResponsavel.value = res._data
+		responsibleData.value = res._data
 	}
 }
 
@@ -305,40 +288,40 @@ const openDetailsModal = async ({
 		y = windowHeight - defHeigth - 10
 	}
 
-	// dadosResponsavel.value = null
+	responsibleData.value = null
 	modalPosition.x = x
 	modalPosition.y = y
 	clickedEvent.value = event
 	visible.value = true
 
-	const usuarioResponsavelId = clickedEvent.value.extendedProps
-		.usuarioResponsavelId as string
+	const responsibleId = clickedEvent.value.extendedProps.userId as number
 
-	const participantesIds = clickedEvent?.value?.extendedProps
-		?.participantsIds as string
+	const guestsIds = clickedEvent?.value?.extendedProps
+		?.guestsIds as string
 
-	const promises = [getGuestsData(participantesIds.split(','))]
+	const promises = [getGuestsData(guestsIds.split(','))]
 
-	// if (usuarioResponsavelId === usuario.value?.id) {
-	// 	// dadosResponsavel.value = usuario.value
-	// } else promises.push(fetchResponsibleData(usuarioResponsavelId))
+	if (responsibleId === user.value?.id) {
+		responsibleData.value = user.value
+	} else promises.push(fetchResponsibleData(responsibleId))
 
 	await Promise.all(promises)
 }
 
-const openConfirmDeleteModal = () => {
-	deleteConfirmModal.value = true
-}
+const onOpenDeleteModal = () => {
+	const {openDeleteModal} = $useConfirm
 
-const closeConfirmDeleteModal = () => {
-	deleteConfirmModal.value = false
+	openDeleteModal({
+		accept: confirmDelete,
+		message: `Do you want to delete this event?`,
+	})
 }
 
 const confirmDelete = async () => {
 	if (!clickedEvent?.value?.id) return
 
 	const res = await $fetch.raw(
-		`/api/v1/agendas/agenda-evento/${clickedEvent?.value?.id}/excluir`,
+		`/api/calendar-event/${clickedEvent?.value?.id}`,
 		{
 			ignoreResponseError: false,
 			method: 'DELETE',
@@ -346,13 +329,12 @@ const confirmDelete = async () => {
 	)
 
 	if (res.ok) {
-		$toast.success('Evento deletado com sucesso')
+		$toast.success('Event deleted successfully!')
 		emits('refreshData')
-	} else {
-		$toast.error('Ocorreu um erro ao deletar este evento!')
+		return
 	}
-	closeConfirmDeleteModal()
-	visible.value = false
+
+	$toast.error('An error occurred while deleting the event')
 }
 
 defineExpose({openDetailsModal})

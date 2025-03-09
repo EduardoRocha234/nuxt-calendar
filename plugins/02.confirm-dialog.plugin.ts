@@ -12,7 +12,7 @@ export default defineNuxtPlugin({
 			type Params = {
 				message: string
 				accept: () => void
-				reject: () => void
+				reject?: () => void
 			}
 
 			const openDeleteModal = ({message, accept, reject}: Params) =>
@@ -35,7 +35,7 @@ export default defineNuxtPlugin({
 						useUseConfirm.close()
 					},
 					reject: () => {
-						reject()
+						if(reject) reject()
 						useUseConfirm.close()
 					},
 				})

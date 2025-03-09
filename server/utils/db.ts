@@ -52,7 +52,7 @@ function createTables() {
                     notify BOOLEAN NOT NULL,
                     allDay BOOLEAN NOT NULL,
                     recurrencyRule TEXT,
-                    participantsIds TEXT,
+                    guestsIds TEXT,
                     deleted BOOLEAN NOT NULL DEFAULT 0,
                     FOREIGN KEY (calendarId) REFERENCES calendar(id) ON DELETE CASCADE ON UPDATE CASCADE,
                     FOREIGN KEY (userId) REFERENCES user(id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -102,7 +102,7 @@ function insertData() {
 			)
 
 			db.run(
-				'INSERT INTO calendar_event (calendarId, priority, userId, name, description, startDate, endDate, notify, allDay, recurrencyRule, participantsIds, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+				'INSERT INTO calendar_event (calendarId, priority, userId, name, description, startDate, endDate, notify, allDay, recurrencyRule, guestsIds, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 				[
 					1,
 					'High',
@@ -120,7 +120,7 @@ function insertData() {
 			)
 
 			db.run(
-				'INSERT INTO calendar_event (calendarId, priority, userId, name, description, startDate, endDate, notify, allDay, recurrencyRule, participantsIds, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+				'INSERT INTO calendar_event (calendarId, priority, userId, name, description, startDate, endDate, notify, allDay, recurrencyRule, guestsIds, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 				[
 					2,
 					'Medium',

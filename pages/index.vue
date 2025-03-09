@@ -3,14 +3,14 @@
 		<!-- <template #header>
 				<ClientOnly>
 					<LazyUiPartialSistemaAreaTrabalhoCabecalho
-						v-model:somente-agenda="opcoesConfiguracao.somenteAgenda"
+						v-model:somente-agenda="calendarConfigOptions.onlyShowCalendar"
 						v-model:mostrar-fins-de-semana="
-							opcoesConfiguracao.mostrarFinsDeSemana
+							calendarConfigOptions.showWeekends
 						"
-						v-model:mostrar-eventos-dia-inteiro="
-							opcoesConfiguracao.mostrarEventosDiaInteiro
+						v-model:mostrar-events-dia-inteiro="
+							calendarConfigOptions.showAllDayEvents
 						"
-						@add-atividade="abrirModalAdicionarEvento"
+						@add-atividade="openAddEventModal"
 					/>
 				</ClientOnly>
 			</template> -->
@@ -20,18 +20,18 @@
 		>
 			<KeepAlive>
 				<LazyAppPartialCalendarSideBar
-					v-if="!opcoesConfiguracao.somenteAgenda"
-					v-model:calendar="calendarioMenorModel"
-					v-model:selected-calendars="agendasSelecionadas"
-					:calendars="configuraAgenda"
-					:loading="carregandoAgendas"
-					@add-event="abrirModalAdicionarEvento"
-					@search-calendars="fethAgendas"
+					v-if="!calendarConfigOptions.onlyShowCalendar"
+					v-model:calendar="smallCalendarModel"
+					v-model:selected-calendars="selectedCalendars"
+					:calendars="configureCalendar"
+					:loading="loadingCalendars"
+					@add-event="openAddEventModal"
+					@search-calendars="getCalendars"
 				/>
 			</KeepAlive>
 			<div class="relative h-full w-full p-2">
 				<div
-					v-show="carregandoEventos"
+					v-show="loadingEvents"
 					class="absolute z-50 mt-20 flex h-[33rem] w-full items-center justify-center rounded-md bg-slate-100 opacity-50 2xl:h-full"
 				>
 					<Icon
@@ -54,11 +54,11 @@
 			@refresh-data="refreshEvents"
 		/>
 		<LazyAppPartialCalendarEventForm
-			:id="idEventoEditar"
-			v-model="modalAdicionarAtividadeVisivel"
-			:calendars="todasAgendas"
-			:star-date="novoEventoData.dataInicio"
-			:end-date="novoEventoData.dataTermino"
+			:id="updateEventId"
+			v-model="addEventModalIsVisible"
+			:calendars="allCalendars"
+			:start-date="newEventDate.startDate"
+			:end-date="newEventDate.endDate"
 			@refresh-data="refreshEvents"
 		/>
 	</div>
@@ -95,78 +95,72 @@ const {$toast} = useNuxtApp()
 const dayjs = useDayjs()
 const user = useUser()
 
-const carregandoAgendas = ref<boolean>(false)
-const carregandoEventos = ref<boolean>(false)
-const modalAdicionarAtividadeVisivel = ref<boolean>(false)
+const loadingCalendars = ref<boolean>(false)
+const loadingEvents = ref<boolean>(false)
+const addEventModalIsVisible = ref<boolean>(false)
 const fullCalendar = ref<InstanceType<typeof FullCalendar> | null>(null)
 const calendarContainer = ref<HTMLElement | null>(null)
-const calendarioMenorModel = ref<Date | null>(null)
-const eventos = ref<EventInput[]>([])
-const agendasSelecionadas = ref<ICalendarMenus[]>([])
-const todasAgendas = ref<ICalendar[]>([])
+const smallCalendarModel = ref<Date | null>(null)
+const events = ref<EventInput[]>([])
+const selectedCalendars = ref<ICalendarMenus[]>([])
+const allCalendars = ref<ICalendar[]>([])
 const eventDetailsModal = ref<InstanceType<typeof ModalDetalhes> | null>(null)
-const idEventoEditar = ref<string | null>(null)
-const parametrosGetEvento = reactive<{
-	agendasIds: string
-	dataInicial?: string
-	dataFinal?: string
+const updateEventId = ref<string | null>(null)
+const periodsSearched = ref<string[]>([])
+const getEventParams = reactive<{
+	calendarsIds: string
+	startDate?: string
+	endDate?: string
 }>({
-	agendasIds: '',
-	dataInicial: undefined,
-	dataFinal: undefined,
+	calendarsIds: '',
+	startDate: undefined,
+	endDate: undefined,
 })
-const periodosJaBuscados = ref<string[]>([])
 
-const configuraAgenda = reactive<ICalendarConfigForUser>({
+const configureCalendar = reactive<ICalendarConfigForUser>({
 	userCalendars: [],
 	othersCalendars: [],
 })
 
-const novoEventoData = reactive<{
-	dataInicio?: Date
-	dataTermino?: Date
+const newEventDate = reactive<{
+	startDate?: Date
+	endDate?: Date
 }>({
-	dataInicio: undefined,
-	dataTermino: undefined,
+	startDate: undefined,
+	endDate: undefined,
 })
 
-const opcoesConfiguracao = useStorage('configuracoes-calendario', {
-	mostrarFinsDeSemana: true,
-	mostrarEventosDiaInteiro: true,
-	somenteAgenda: false,
+const calendarConfigOptions = useStorage('calendar-config', {
+	showWeekends: true,
+	showAllDayEvents: true,
+	onlyShowCalendar: false,
 })
 const tourPelaAgenda = useStorage('tour-agenda', true)
 
-const eventosFilter = computed(() => {
+const eventsFilter = computed(() => {
 	if (!fullCalendar.value?.getApi()) return []
 
-	const agendasSelecionadasIds = new Set(
-		agendasSelecionadas.value.map((a) => a.id)
-	)
+	const selectedCalendarsIds = new Set(selectedCalendars.value.map((a) => a.id))
 
-	if (agendasSelecionadasIds.size === 0) return []
+	if (selectedCalendarsIds.size === 0) return []
 
-	const filter = eventos.value.filter((e) =>
-		agendasSelecionadasIds.has(e.extendedProps?.calendarId)
+	const filter = events.value.filter((e) =>
+		selectedCalendarsIds.has(e.extendedProps?.calendarId)
 	)
 
 	return filter
 })
 
-const abrirPopupEvento = (info: EventHoveringArg) => {
+const openEventPopup = (info: EventHoveringArg) => {
 	tippy(info.el, {
 		content: `
 			<div style="min-width: 20rem">
 				<strong>${info.event._def.title}</strong><br />
-				<span><strong>Data Inicial:</strong> ${formatarData(
+				<span><strong>Data Inicial:</strong> ${formatDate(
 					info.event.start
 				)}</span><br />
-				<span><strong>Data Final:</strong> ${formatarData(
-					ajustarDataParaExibicao(
-						info.event.allDay,
-						info.event.start,
-						info.event.end
-					)
+				<span><strong>Data Final:</strong> ${formatDate(
+					adjustDateForShow(info.event.allDay, info.event.start, info.event.end)
 				)}</span><br />
 				<span><strong>Descrição:</strong> ${
 					info.event._def.extendedProps.descricao || 'Sem descrição'
@@ -185,46 +179,46 @@ const abrirPopupEvento = (info: EventHoveringArg) => {
 	})
 }
 
-const formatarData = (data: Date | null) => {
-	const dataFormatada = dayjs(data).format('DD/MM/YYYY HH:mm')
+const formatDate = (data: Date | null) => {
+	const formatedDate = dayjs(data).format('DD/MM/YYYY HH:mm')
 
-	if (dataFormatada === 'Invalid Date') return ''
+	if (formatedDate === 'Invalid Date') return ''
 
-	return dataFormatada.replace('00:00', '')
+	return formatedDate.replace('00:00', '')
 }
 
-const ajustarDataParaExibicao = (
-	diaInteiro: boolean,
-	dataInicio: Date | null,
-	dataTermino: Date | null
+const adjustDateForShow = (
+	allDay: boolean,
+	startDate: Date | null,
+	endDate: Date | null
 ) => {
-	if (diaInteiro) {
-		return dayjs(dataInicio).isSame(dataTermino, 'day')
-			? new Date(dayjs(dataTermino).format('YYYY-MM-DD'))
-			: dayjs(dataTermino).subtract(1, 'day').toDate()
+	if (allDay) {
+		return dayjs(startDate).isSame(endDate, 'day')
+			? new Date(dayjs(endDate).format('YYYY-MM-DD'))
+			: dayjs(endDate).subtract(1, 'day').toDate()
 	}
 
-	return dayjs(dataTermino).toDate()
+	return dayjs(endDate).toDate()
 }
 
 const openUpdateEventModal = (id: string) => {
-	idEventoEditar.value = id
-	modalAdicionarAtividadeVisivel.value = true
+	updateEventId.value = id
+	addEventModalIsVisible.value = true
 }
 
-const abrirModalAdicionarEvento = (info?: DateSelectArg) => {
-	idEventoEditar.value = null
-	modalAdicionarAtividadeVisivel.value = true
+const openAddEventModal = (info?: DateSelectArg) => {
+	updateEventId.value = null
+	addEventModalIsVisible.value = true
 
 	if (info) {
-		novoEventoData.dataInicio = dayjs(info.startStr).toDate()
-		novoEventoData.dataTermino =
+		newEventDate.startDate = dayjs(info.startStr).toDate()
+		newEventDate.endDate =
 			info.view.type === 'dayGridMonth'
 				? dayjs(info.endStr).subtract(1, 'day').toDate()
 				: dayjs(info.endStr).toDate()
 	} else {
-		novoEventoData.dataInicio = dayjs().toDate()
-		novoEventoData.dataTermino = dayjs().toDate()
+		newEventDate.startDate = dayjs().toDate()
+		newEventDate.endDate = dayjs().toDate()
 	}
 }
 
@@ -238,15 +232,15 @@ const fullcalendarProps = computed<CalendarOptions>(() => ({
 		right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
 	},
 	// locale: 'pt-BR',
-	events: eventosFilter.value,
+	events: eventsFilter.value,
 	dayMaxEventRows: 5,
 	selectable: true,
 	handleWindowResize: true,
 	nowIndicator: true,
 	firstDay: 0,
-	weekends: opcoesConfiguracao.value.mostrarFinsDeSemana,
-	allDaySlot: opcoesConfiguracao.value.mostrarEventosDiaInteiro,
-	select: abrirModalAdicionarEvento,
+	weekends: calendarConfigOptions.value.showWeekends,
+	allDaySlot: calendarConfigOptions.value.showAllDayEvents,
+	select: openAddEventModal,
 	dayCellClassNames: (info) => {
 		const day = info.date.getDay()
 		if (day === 0 || day === 6) {
@@ -267,51 +261,49 @@ const fullcalendarProps = computed<CalendarOptions>(() => ({
 			event: info.event,
 		})
 	},
-	eventMouseEnter: abrirPopupEvento,
-	datesSet: buscarEventosProximoPeriodo,
+	eventMouseEnter: openEventPopup,
+	datesSet: getEventsNextPeriod,
 }))
 
 const refreshEvents = async () => {
-	periodosJaBuscados.value = []
-	eventos.value = []
+	periodsSearched.value = []
+	events.value = []
 
-	setPeriodo()
+	setPeriod()
 
-	await buscarEventos()
+	await getEvents()
 }
 
-const buscarEventosProximoPeriodo = async (e: DatesSetArg) => {
-	const periodoDataInicio = e.startStr
-	const periodoDataFim = e.endStr
+const getEventsNextPeriod = async (e: DatesSetArg) => {
+	const startDatePeriod = e.startStr
+	const endDatePeriod = e.endStr
 
 	if (
-		periodosJaBuscados.value.includes(periodoDataInicio) &&
-		periodosJaBuscados.value.includes(periodoDataFim)
+		periodsSearched.value.includes(startDatePeriod) &&
+		periodsSearched.value.includes(endDatePeriod)
 	)
 		return
 
-	parametrosGetEvento.dataInicial = periodoDataInicio
-	parametrosGetEvento.dataFinal = periodoDataFim
+	getEventParams.startDate = startDatePeriod
+	getEventParams.endDate = endDatePeriod
 
-	periodosJaBuscados.value.push(periodoDataInicio)
-	periodosJaBuscados.value.push(periodoDataFim)
+	periodsSearched.value.push(startDatePeriod)
+	periodsSearched.value.push(endDatePeriod)
 
-	await buscarEventos()
+	await getEvents()
 }
 
-const fethAgendas = async () => {
-	periodosJaBuscados.value = []
-
-	const parametros = {
-		userId: user.value?.id,
-	}
+const getCalendars = async () => {
+	periodsSearched.value = []
 
 	try {
-		carregandoAgendas.value = true
+		loadingCalendars.value = true
 		const res = await $fetch.raw<ICalendarConfigForUser>(
 			`/api/calendar/configure`,
 			{
-				query: parametros,
+				query: {
+					userId: user.value?.id,
+				},
 				ignoreResponseError: false,
 			}
 		)
@@ -320,20 +312,19 @@ const fethAgendas = async () => {
 			const {userCalendars, othersCalendars} =
 				res._data as ICalendarConfigForUser
 
-			configuraAgenda.userCalendars = userCalendars
-			configuraAgenda.othersCalendars = othersCalendars
+			configureCalendar.userCalendars = userCalendars
+			configureCalendar.othersCalendars = othersCalendars
 
-			const unificar = [...userCalendars, ...othersCalendars]
+			const unify = [...userCalendars, ...othersCalendars]
 
-			todasAgendas.value = unificar
+			allCalendars.value = unify
 
-			const pegarIds = unificar.map((a) => a.id!).join(',')
+			const ids = unify.map((a) => a.id!).join(',')
 
-			parametrosGetEvento.agendasIds = pegarIds
+			getEventParams.calendarsIds = ids
 
-			setPeriodo()
-			await buscarEventos()
-
+			setPeriod()
+			await getEvents()
 			return
 		}
 
@@ -341,43 +332,43 @@ const fethAgendas = async () => {
 	} catch (error) {
 		$toast.error('An error occurred while trying to fetch your calendars')
 	} finally {
-		carregandoAgendas.value = false
+		loadingCalendars.value = false
 	}
 }
 
-const setPeriodo = () => {
+const setPeriod = () => {
 	if (fullCalendar.value?.getApi()) {
 		const calendarApi = fullCalendar.value.getApi()
-		const calendarioView = calendarApi?.view
-		const dataInicio = new Date(calendarioView.activeStart).toISOString()
-		const dataFim = new Date(calendarioView.activeEnd).toISOString()
+		const calendarView = calendarApi?.view
+		const startDate = new Date(calendarView.activeStart).toISOString()
+		const endDate = new Date(calendarView.activeEnd).toISOString()
 
-		parametrosGetEvento.dataInicial = dataInicio
-		parametrosGetEvento.dataFinal = dataFim
+		getEventParams.startDate = startDate
+		getEventParams.endDate = endDate
 
-		periodosJaBuscados.value.push(dataInicio)
-		periodosJaBuscados.value.push(dataFim)
+		periodsSearched.value.push(startDate)
+		periodsSearched.value.push(endDate)
 	}
 }
 
-const buscarEventos = async () => {
-	if (!parametrosGetEvento.agendasIds) return
+const getEvents = async () => {
+	if (!getEventParams.calendarsIds) return
 
 	try {
-		carregandoEventos.value = true
+		loadingEvents.value = true
 		const res = await $fetch.raw<ICalendarEvent[]>(
 			'/api/calendar-event/list-by-calendars',
 			{
-				params: parametrosGetEvento,
+				params: getEventParams,
 				ignoreResponseError: false,
 			}
 		)
 
 		if (res.ok) {
-			const eventosApi = Array.isArray(res._data) ? res._data : []
-			eventos.value = [
-				...eventos.value,
-				...eventosApi.map(mapearParaEventoFullCalendar),
+			const apiEvents = Array.isArray(res._data) ? res._data : []
+			events.value = [
+				...events.value,
+				...apiEvents.map(mapEventToFullCalendar),
 			]
 			return
 		}
@@ -385,32 +376,30 @@ const buscarEventos = async () => {
 	} catch (error) {
 		$toast.error('An error occurred while fetching your events')
 	} finally {
-		carregandoEventos.value = false
+		loadingEvents.value = false
 	}
 }
 
-const calcularDataTermino = (
-	diaInteiro: boolean,
-	dataInicio?: Date,
-	dataTermino?: Date
+const calculateEndDate = (
+	allDay: boolean,
+	startDate?: Date,
+	endDate?: Date
 ) => {
-	// Caso seja um evento de dia inteiro
-	if (diaInteiro) {
-		return dayjs(dataInicio).isSame(dataTermino, 'day')
-			? dayjs(dataTermino).format('YYYY-MM-DD') // Não adiciona dia extra se for o mesmo dia
-			: dayjs(dataTermino).add(1, 'day').format('YYYY-MM-DD') // Adiciona dia extra se for de múltiplos dias
+	if (allDay) {
+		return dayjs(startDate).isSame(endDate, 'day')
+			? dayjs(endDate).format('YYYY-MM-DD')
+			: dayjs(endDate).add(1, 'day').format('YYYY-MM-DD')
 	}
 
-	// Caso seja um evento com hora definida
-	return dataTermino
+	return endDate
 }
 
-const mapearParaEventoFullCalendar = (e: ICalendarEvent) =>
+const mapEventToFullCalendar = (e: ICalendarEvent) =>
 	({
 		id: e.id?.toString(),
 		title: e.name,
 		start: e.startDate ? dayjs(e.startDate).format('YYYY-MM-DD') : e.startDate,
-		end: calcularDataTermino(e.allDay!, e.startDate, e.endDate),
+		end: calculateEndDate(e.allDay!, e.startDate, e.endDate),
 		allDay: e.allDay,
 		backgroundColor: e.color,
 		extendedProps: {
@@ -419,18 +408,18 @@ const mapearParaEventoFullCalendar = (e: ICalendarEvent) =>
 			priority: e.priority,
 			notify: e.notify,
 			recurrencyRule: e.recurrencyRule,
-			participantsIds: e.participantsIds,
+			guestsIds: e.guestsIds,
 			userId: e.userId,
 		},
 	} satisfies EventInput)
 
-watch(calendarioMenorModel, (nv, ov) => {
+watch(smallCalendarModel, (nv, ov) => {
 	if (fullCalendar.value) {
-		const novaData = nv ? new Date(nv).toISOString() : null
-		const dataAnterior = ov ? new Date(ov).toISOString() : null
+		const newDate = nv ? new Date(nv).toISOString() : null
+		const lastDate = ov ? new Date(ov).toISOString() : null
 		const calendarApi = fullCalendar.value.getApi()
 
-		if (novaData === dataAnterior) {
+		if (newDate === lastDate) {
 			calendarApi.changeView('dayGridMonth')
 			return
 		}
@@ -441,7 +430,7 @@ watch(calendarioMenorModel, (nv, ov) => {
 })
 
 watch(
-	() => opcoesConfiguracao.value.somenteAgenda,
+	() => calendarConfigOptions.value.onlyShowCalendar,
 	useDebounceFn(() => {
 		const calendarApi = fullCalendar?.value?.getApi()
 
@@ -450,7 +439,7 @@ watch(
 )
 
 onMounted(async () => {
-	if (!carregandoAgendas.value) await fethAgendas()
+	if (!loadingCalendars.value) await getCalendars()
 
 	// const driverObj = driver({
 	// 	showProgress: true,
@@ -463,8 +452,8 @@ onMounted(async () => {
 	// 		{
 	// 			element: '#addEventoBtn',
 	// 			popover: {
-	// 				title: 'Adicionar eventos',
-	// 				description: 'Clique aqui para adicionar eventos ao seu calendário',
+	// 				title: 'Adicionar events',
+	// 				description: 'Clique aqui para adicionar events ao seu calendário',
 	// 			},
 	// 		},
 	// 		{
@@ -480,7 +469,7 @@ onMounted(async () => {
 	// 			popover: {
 	// 				title: 'Adicionar agendas',
 	// 				description:
-	// 					'Clique aqui para adicionar agendas ao seu calendário e use-as para organizar seus eventos',
+	// 					'Clique aqui para adicionar agendas ao seu calendário e use-as para organizar seus events',
 	// 			},
 	// 		},
 	// 		{
@@ -511,7 +500,7 @@ onMounted(async () => {
 	// 			popover: {
 	// 				title: 'Modo de vizualização',
 	// 				description:
-	// 					'Selecione o modo de vizualização que você preferir, com mais detalhes sobre a semana, dia e uma lista dos seus eventos',
+	// 					'Selecione o modo de vizualização que você preferir, com mais detalhes sobre a semana, dia e uma lista dos seus events',
 	// 			},
 	// 		},
 	// 		{
@@ -519,7 +508,7 @@ onMounted(async () => {
 	// 			popover: {
 	// 				title: 'Sua agenda',
 	// 				description:
-	// 					'Vizualize todos os seus eventos de forma prática, crie eventos para qualquer dia com apenas um clique e gerencie tudo de forma rápida e prática',
+	// 					'Vizualize todos os seus events de forma prática, crie events para qualquer dia com apenas um clique e gerencie tudo de forma rápida e prática',
 	// 			},
 	// 		},
 	// 		{

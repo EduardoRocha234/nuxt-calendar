@@ -18,7 +18,7 @@ export interface ICalendarEvent {
 	recurrencyRule?: string
 	calendarId?: number
 	userId?: number
-	participantsIds?: string
+	guestsIds?: string
 	color?: string
 	deleted?: boolean
 }

@@ -114,7 +114,7 @@
 								filter
 								fluid
 								:max-selected-labels="3"
-								:invalid="!!getError('participantsIds')"
+								:invalid="!!getError('guestsIds')"
 								:loading="loadingUsers || showLoading"
 								:show-toggle-all="false"
 								:virtual-scroller-options="{itemSize: 44}"
@@ -129,9 +129,9 @@
 							<label for="guests">Guests</label>
 						</FloatLabel>
 						<span
-							v-if="!!getError('participantsIds')"
+							v-if="!!getError('guestsIds')"
 							class="text-sm text-red-600"
-							>{{ getError('participantsIds') }}</span
+							>{{ getError('guestsIds') }}</span
 						>
 					</div>
 				</div>
@@ -211,11 +211,11 @@ import * as zod from 'zod'
 const props = defineProps<{
 	id?: string | null
 	calendars: ICalendar[]
-	starDate?: Date
+	startDate?: Date
 	endDate?: Date
 }>()
 
-const {calendars, starDate, endDate} = toRefs(props)
+const {calendars, startDate, endDate} = toRefs(props)
 
 const user = useUser()
 
@@ -255,7 +255,7 @@ const initialValues: ICalendarEvent = {
 	recurrencyRule: undefined,
 	calendarId: undefined,
 	userId: user.value?.id,
-	participantsIds: undefined,
+	guestsIds: undefined,
 	color: undefined,
 	allDay: false,
 	notify: false,
@@ -303,7 +303,7 @@ const validation = zod.object({
 		.min(1, {
 			message: 'Priority is required',
 		}),
-	participantsIds: zod
+	guestsIds: zod
 		.string({
 			required_error: 'Select guest(s)',
 		})
@@ -328,7 +328,7 @@ const {valid, getError, validate, clearErrors, errors} = useFormValidation(
 
 const sendForm = async () => {
 	try {
-		formEvent.participantsIds = selectedGuests.value.join(',')
+		formEvent.guestsIds = selectedGuests.value.join(',')
 
 		await validate()
 
@@ -389,13 +389,13 @@ const getEventById = async () => {
 
 			if (data.recurrencyRule?.length) recurrencyEvent.value = true
 
-			if (data.participantsIds) {
-				const splitParticipantes = data.participantsIds?.split(',').map(Number)
+			if (data.guestsIds) {
+				const splitParticipantes = data.guestsIds?.split(',').map(Number)
 
 				if (splitParticipantes.length > 0) {
 					selectedGuests.value = splitParticipantes
 				} else {
-					selectedGuests.value.push(Number(data.participantsIds))
+					selectedGuests.value.push(Number(data.guestsIds))
 				}
 			}
 			return
@@ -410,7 +410,7 @@ const getEventById = async () => {
 }
 
 const updateEvent = async () => {
-	const req = await $fetch.raw(`/api/calendar-event${props.id}/atualizar`, {
+	const req = await $fetch.raw(`/api/calendar-event/${props.id}`, {
 		method: 'PUT',
 		body: formEvent,
 		ignoreResponseError: true,
@@ -462,7 +462,7 @@ watch(visible, async (visivel) => {
 		recurrencyEvent.value = false
 		selectedGuests.value = []
 		formEvent.userId = user.value?.id
-		formEvent.startDate = starDate.value
+		formEvent.startDate = startDate.value
 		formEvent.endDate = endDate.value
 	}
 })

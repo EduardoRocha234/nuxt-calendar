@@ -1,7 +1,7 @@
 <template>
 	<Dialog
 		v-model:visible="visible"
-		:header="isEditing ? 'Update calendar' : 'Add calendar'"
+		:header="header"
 		modal
 		maximizable
 		:style="{width: '80vw'}"
@@ -85,6 +85,9 @@ const visible = defineModel<boolean>()
 const loading = ref<boolean>(false)
 
 const readOnly = computed(() => calendarForm.userId !== user?.value?.id)
+const header = computed(() =>
+	isEditing.value ? (readOnly.value ? 'Calendar details' : 'Update calendar') : 'Add calendar'
+)
 
 const initValues: ICalendar = {
 	id: undefined,
@@ -155,7 +158,7 @@ const fetchCalendarById = async () => {
 	try {
 		loading.value = true
 		const response = await $fetch.raw<ICalendar>(
-			`api/calendar/${calendarId.value}`,
+			`/api/calendar/${calendarId.value}`,
 			{
 				ignoreResponseError: true,
 			}
@@ -175,14 +178,11 @@ const fetchCalendarById = async () => {
 }
 
 const updateCalendar = async () => {
-	const req = await $fetch.raw(
-		`api/v1/agendas/agenda-evento/${calendarId.value}/atualizar`,
-		{
-			method: 'PUT',
-			body: calendarForm,
-			ignoreResponseError: true,
-		}
-	)
+	const req = await $fetch.raw(`/api/calendar/${calendarId.value}`, {
+		method: 'PUT',
+		body: calendarForm,
+		ignoreResponseError: true,
+	})
 
 	if (req.status === 200) {
 		$toast.success('Calendar updated successfully')

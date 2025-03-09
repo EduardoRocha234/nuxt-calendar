@@ -160,22 +160,6 @@
 				@refresh-data="emits('searchCalendars')"
 				@delete="confirmDelete"
 			/>
-			<!-- <LazyUiModalConfirmarExclusaoV1
-				v-model="confirmDeleteModal"
-				:on-close="() => closeDeleteModal()"
-				:on-confirm="() => confirmDelete()"
-				:loading-delete="loadingDelete"
-			>
-				<template #content>
-					<div class="flex flex-col">
-						<span>Deseja excluir esta agenda?</span>
-						<span class="text-sm font-bold"
-							>Ao excluir esta agenda todas as atividades relacionadas a ela
-							serão excluidas!</span
-						>
-					</div>
-				</template>
-			</LazyUiModalConfirmarExclusaoV1> -->
 			<ConfirmDialog />
 		</template>
 	</div>
