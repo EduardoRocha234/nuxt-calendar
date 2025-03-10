@@ -1,26 +1,94 @@
 <template>
-	<div class="m-6 p-4 shadow-lg rounded-md">
-		<!-- <template #header>
-				<ClientOnly>
-					<LazyUiPartialSistemaAreaTrabalhoCabecalho
-						v-model:somente-agenda="calendarConfigOptions.onlyShowCalendar"
-						v-model:mostrar-fins-de-semana="
-							calendarConfigOptions.showWeekends
-						"
-						v-model:mostrar-events-dia-inteiro="
-							calendarConfigOptions.showAllDayEvents
-						"
-						@add-atividade="openAddEventModal"
+	<Transition name="fade">
+		<div
+			v-if="user"
+			class="m-6 p-6 border rounded-2xl shadow-lg flex justify-between items-center bg-white"
+		>
+			<span class="text-xl font-bold">Hello, {{ user?.fullName }} 👋</span>
+			<div class="flex gap-4 transition-all">
+				<Transition name="fade">
+					<Icon
+						v-if="calendarConfigOptions.showOnlyCalendar"
+						v-tooltip.bottom="'Add event'"
+						name="mdi:plus"
+						size="26"
+						class="text-slate-600 cursor-pointer"
+						@click="openAddEventModal"
 					/>
-				</ClientOnly>
-			</template> -->
+				</Transition>
+				<NuxtLink to="/what-is-this-calendar">
+					<Icon
+						v-tooltip.bottom="'Whats is this calendar?'"
+						name="mdi:question-mark-circle-outline"
+						size="26"
+						class="text-slate-600 cursor-pointer"
+					/>
+				</NuxtLink>
+				<Icon
+					v-tooltip.bottom="'Settings'"
+					name="mdi:cog-outline"
+					size="26"
+					class="text-slate-600 cursor-pointer"
+					@click="toggle"
+				/>
+				<Popover ref="op">
+					<div class="flex flex-col gap-4">
+						<ul
+							class="*:flex *:gap-2 *:transition-colors *:px-2 *:py-2 *:rounded-md *:text-sm"
+						>
+							<li class="hover:bg-green-50">
+								<Checkbox
+									input-id="showOnlyCalendar"
+									v-model="calendarConfigOptions.showOnlyCalendar"
+									size="small"
+									binary
+								/>
+								<label
+									class="cursor-pointer"
+									for="showOnlyCalendar"
+									>Show only calendar</label
+								>
+							</li>
+							<li class="hover:bg-green-50">
+								<Checkbox
+									input-id="showAllDayEvents"
+									v-model="calendarConfigOptions.showAllDayEvents"
+									size="small"
+									binary
+								/>
+								<label
+									class="cursor-pointer"
+									for="showAllDayEvents"
+									>Only all day events</label
+								>
+							</li>
+							<li class="hover:bg-green-50">
+								<Checkbox
+									input-id="showWeekends"
+									v-model="calendarConfigOptions.showWeekends"
+									size="small"
+									binary
+								/>
+								<label
+									class="cursor-pointer"
+									for="showWeekends"
+									>Show weekends</label
+								>
+							</li>
+						</ul>
+					</div>
+				</Popover>
+			</div>
+		</div>
+	</Transition>
+	<div class="m-6 p-4 rounded-2xl shadow-lg bg-white">
 		<div
 			ref="calendarContainer"
 			class="flex h-full w-full"
 		>
-			<KeepAlive>
-				<LazyAppPartialCalendarSideBar
-					v-if="!calendarConfigOptions.onlyShowCalendar"
+			<Transition name="fade">
+				<AppPartialCalendarSideBar
+					v-show="!calendarConfigOptions.showOnlyCalendar"
 					v-model:calendar="smallCalendarModel"
 					v-model:selected-calendars="selectedCalendars"
 					:calendars="configureCalendar"
@@ -28,7 +96,7 @@
 					@add-event="openAddEventModal"
 					@search-calendars="getCalendars"
 				/>
-			</KeepAlive>
+			</Transition>
 			<div class="relative h-full w-full p-2">
 				<div
 					v-show="loadingEvents"
@@ -61,6 +129,19 @@
 			:end-date="newEventDate.endDate"
 			@refresh-data="refreshEvents"
 		/>
+	</div>
+	<div
+		class="m-6 p-6 rounded-2xl flex justify-center items-center shadow-lg bg-white"
+	>
+		<span
+			>© 2025 Developed by
+			<a
+				href="https://github.com/EduardoRocha234"
+				target="_blank"
+				class="hover:underline"
+				>Eduardo Aleixo</a
+			></span
+		>
 	</div>
 </template>
 
@@ -95,6 +176,7 @@ const {$toast} = useNuxtApp()
 const dayjs = useDayjs()
 const user = useUser()
 
+const op = ref()
 const loadingCalendars = ref<boolean>(false)
 const loadingEvents = ref<boolean>(false)
 const addEventModalIsVisible = ref<boolean>(false)
@@ -117,6 +199,12 @@ const getEventParams = reactive<{
 	endDate: undefined,
 })
 
+const calendarTour = useStorage('tour-agenda', true)
+
+const toggle = (event: Event) => {
+	op.value.toggle(event)
+}
+
 const configureCalendar = reactive<ICalendarConfigForUser>({
 	userCalendars: [],
 	othersCalendars: [],
@@ -133,9 +221,8 @@ const newEventDate = reactive<{
 const calendarConfigOptions = useStorage('calendar-config', {
 	showWeekends: true,
 	showAllDayEvents: true,
-	onlyShowCalendar: false,
+	showOnlyCalendar: false,
 })
-const tourPelaAgenda = useStorage('tour-agenda', true)
 
 const eventsFilter = computed(() => {
 	if (!fullCalendar.value?.getApi()) return []
@@ -366,10 +453,7 @@ const getEvents = async () => {
 
 		if (res.ok) {
 			const apiEvents = Array.isArray(res._data) ? res._data : []
-			events.value = [
-				...events.value,
-				...apiEvents.map(mapEventToFullCalendar),
-			]
+			events.value = [...events.value, ...apiEvents.map(mapEventToFullCalendar)]
 			return
 		}
 		$toast.error('An error occurred while fetching your events')
@@ -430,7 +514,7 @@ watch(smallCalendarModel, (nv, ov) => {
 })
 
 watch(
-	() => calendarConfigOptions.value.onlyShowCalendar,
+	() => calendarConfigOptions.value.showOnlyCalendar,
 	useDebounceFn(() => {
 		const calendarApi = fullCalendar?.value?.getApi()
 
@@ -438,100 +522,89 @@ watch(
 	}, 50)
 )
 
+watch(user, (nv) => {
+	if (nv) {
+		console.log(nv)
+		const driverObj = driver({
+			showProgress: true,
+			showButtons: ['next', 'close', 'previous'],
+			steps: [
+				{
+					element: '#addEventBtn',
+					popover: {
+						title: 'Add Events',
+						description: 'Click here to add events to your calendar',
+					},
+				},
+				{
+					element: '#smCalendar',
+					popover: {
+						title: 'Quick Navigation',
+						description: 'Use this calendar to quickly access any day',
+					},
+				},
+				{
+					element: '#addCalendarBtn',
+					popover: {
+						title: 'Add Calendars',
+						description: 'Click here to add calendars to organize your events',
+					},
+				},
+				{
+					element: '#My_Calendars',
+					popover: {
+						title: 'Your Calendars',
+						description: 'Manage and control which calendars you want to view!',
+					},
+				},
+				{
+					element: '#Other_Calendars',
+					popover: {
+						title: 'Other Calendars',
+						description: 'Here you will see calendars from other users',
+					},
+				},
+				{
+					element: '.fc-toolbar-chunk',
+					popover: {
+						title: 'Navigation',
+						description: 'Use these buttons to navigate between months!',
+					},
+				},
+				{
+					element: '.fc-button-group:has(.fc-dayGridMonth-button)',
+					popover: {
+						title: 'View Mode',
+						description:
+							'Select your preferred view mode, with more details about the week, day, and a list of your events',
+					},
+				},
+				{
+					element: '.fc-dayGridMonth-view',
+					popover: {
+						title: 'Your Schedule',
+						description:
+							'View all your events easily, create events for any day with just one click, and manage everything quickly and efficiently',
+					},
+				},
+			],
+		})
+
+		if (calendarTour.value) {
+			driverObj.drive()
+			calendarTour.value = false
+		}
+	}
+})
+
 onMounted(async () => {
 	if (!loadingCalendars.value) await getCalendars()
-
-	// const driverObj = driver({
-	// 	showProgress: true,
-	// 	showButtons: ['next', 'close', 'previous'],
-	// 	nextBtnText: 'Próximo',
-	// 	prevBtnText: 'Anterior',
-	// 	doneBtnText: 'Entendi',
-	// 	progressText: '{{current}} de {{total}}',
-	// 	steps: [
-	// 		{
-	// 			element: '#addEventoBtn',
-	// 			popover: {
-	// 				title: 'Adicionar events',
-	// 				description: 'Clique aqui para adicionar events ao seu calendário',
-	// 			},
-	// 		},
-	// 		{
-	// 			element: '#smcalendar',
-	// 			popover: {
-	// 				title: 'Navegação rápida',
-	// 				description:
-	// 					'Use este calendário para acessar qualquer dia mais rapidamente',
-	// 			},
-	// 		},
-	// 		{
-	// 			element: '#addAgendaBtn',
-	// 			popover: {
-	// 				title: 'Adicionar agendas',
-	// 				description:
-	// 					'Clique aqui para adicionar agendas ao seu calendário e use-as para organizar seus events',
-	// 			},
-	// 		},
-	// 		{
-	// 			element: '#Minhas_agendas',
-	// 			popover: {
-	// 				title: 'Suas agendas',
-	// 				description:
-	// 					'Gerencie e controle quais agendas você quer vizualizar!',
-	// 			},
-	// 		},
-	// 		{
-	// 			element: '#Outras_agendas',
-	// 			popover: {
-	// 				title: 'Outras agendas',
-	// 				description:
-	// 					'Aqui aparecerão agendas de seus gestores, equipes e outros usuários',
-	// 			},
-	// 		},
-	// 		{
-	// 			element: '.fc-toolbar-chunk',
-	// 			popover: {
-	// 				title: 'Navegação',
-	// 				description: 'Use esses botões para navegar entre os meses!',
-	// 			},
-	// 		},
-	// 		{
-	// 			element: '.fc-button-group:has(.fc-dayGridMonth-button)',
-	// 			popover: {
-	// 				title: 'Modo de vizualização',
-	// 				description:
-	// 					'Selecione o modo de vizualização que você preferir, com mais detalhes sobre a semana, dia e uma lista dos seus events',
-	// 			},
-	// 		},
-	// 		{
-	// 			element: '.fc-dayGridMonth-view',
-	// 			popover: {
-	// 				title: 'Sua agenda',
-	// 				description:
-	// 					'Vizualize todos os seus events de forma prática, crie events para qualquer dia com apenas um clique e gerencie tudo de forma rápida e prática',
-	// 			},
-	// 		},
-	// 		{
-	// 			element: '#barraFerramentas',
-	// 			popover: {
-	// 				title: 'Barra de ferramentas',
-	// 				description:
-	// 					'Aqui você tem botões de ferramentas como relatório, opcões de configuração e mais!',
-	// 			},
-	// 		},
-	// 	],
-	// })
-
-	// if (tourPelaAgenda.value) {
-	// 	driverObj.drive()
-	// 	tourPelaAgenda.value = false
-	// }
 })
 </script>
 
 <style>
 .fc .fc-toolbar.fc-header-toolbar {
-	background-color: var(--p-indigo-50); /* Fundo do cabeçalho */
+	background-color: var(--p-gray-50); /* Fundo do cabeçalho */
 	border-radius: 8px;
 	padding: 10px;
 }

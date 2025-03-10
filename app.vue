@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div >
 		<Dialog
 			v-model:visible="modalVisible"
 			header="Hello! Good to see you here"
@@ -66,8 +66,8 @@ const modalVisible = ref<boolean>(true)
 const user = useUser()
 
 const newUser = reactive<Pick<IUser, 'fullName' | 'email'>>({
-	fullName: 'teste',
-	email: 'duduraleixo20005@gmail.com',
+	fullName: '',
+	email: '',
 })
 
 const schema = z.object({

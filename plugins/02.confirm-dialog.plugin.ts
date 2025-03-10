@@ -1,11 +1,8 @@
-import ConfirmationService from 'primevue/confirmationservice'
 import {useConfirm} from 'primevue/useconfirm'
 
 export default defineNuxtPlugin({
 	name: `confirm-dialog-plugin`,
 	setup(nuxtApp) {
-		nuxtApp.vueApp.use(ConfirmationService)
-
 		const useUseConfirm = useConfirm()
 
 		const useConfirmFn = () => {
