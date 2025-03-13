@@ -49,22 +49,15 @@
 		</template>
 
 		<div class="h-full w-full">
-			<div class="mb-4 w-full text-sm">
-				{{
-					dayjs(clickedEvent?.start).format(
-						'dddd, D [de] MMMM [de] YYYY, h:mmA'
-					)
-				}}
-				<template v-if="clickedEvent?.end">
-					-
-					{{
-						adjustDateForShow(
-							clickedEvent.allDay,
-							clickedEvent.start,
-							clickedEvent.end
-						)
-					}}</template
-				>
+			<div class="mb-4 w-full text-sm flex items-center gap-2">
+				<div>
+					<Icon
+						name="mdi:clock-outline"
+						size="26"
+						class="text-slate-500"
+					/>
+				</div>
+				{{ eventDate }}
 			</div>
 
 			<div
@@ -74,18 +67,10 @@
 				<div class="flex items-center justify-between pr-2">
 					<div class="flex items-center gap-2">
 						<Avatar
-							:label="
-								!responsibleData?.avatar
-									? responsibleData.fullName[0].toUpperCase()
-									: undefined
-							"
+							:label="resolveAvatarLavel(responsibleData)"
 							:image="responsibleData.avatar || undefined"
 							shape="circle"
-							:pt="{
-								image: {
-									class: '!rounded-full',
-								},
-							}"
+							:pt="AVATAR_PT"
 						/>
 						<div class="flex flex-col">
 							<span class="font-semibold">
@@ -103,29 +88,29 @@
 					/>
 				</div>
 			</div>
-			<div
-				v-if="clickedEvent?.extendedProps.description"
-				class="mb-2 max-h-32 w-full overflow-auto rounded-md bg-slate-100 p-2 text-sm"
-			>
-				{{ clickedEvent?.extendedProps.description }}
-			</div>
+
 			<div
 				v-if="clickedEvent?.extendedProps.priority"
-				class="mb-2 flex max-h-20 w-full flex-col gap-1 overflow-auto rounded-md bg-slate-100 p-2 text-sm"
+				class="mb-2 w-full rounded-md bg-slate-100 p-2 text-sm"
 			>
-				<span class="flex items-center gap-2">
-					<Icon
-						name="material-symbols:low-priority-rounded"
-						size="25"
-					/>
-					Priority:
-					<span class="font-semibold">{{
-						clickedEvent?.extendedProps.priority
-					}}</span>
+				<span class="font-semibold">
+					{{ clickedEvent?.extendedProps.priority }}
+					<picture></picture>riority
 				</span>
 			</div>
+
 			<div
-				v-if="guestsEmails.length > 0"
+				v-if="clickedEvent?.extendedProps.description"
+				class="mb-2 max-h-32 w-full overflow-auto rounded-md bg-slate-100 p-2 text-sm flex flex-col"
+			>
+				<span class="text-xs font-semibold mb-1">Description</span>
+				<span>
+					{{ clickedEvent?.extendedProps.description }}
+				</span>
+			</div>
+
+			<div
+				v-if="guestsEmails.length"
 				class="group mb-2 flex w-full flex-col gap-1 rounded-md bg-slate-100 p-2 text-sm"
 			>
 				<div class="mb-1 flex w-full items-center justify-between pr-2">
@@ -149,38 +134,30 @@
 				</div>
 				<ul class="max-h-40 overflow-auto scrollbar-thin">
 					<li
-						v-for="(participante, idx) in guestsData"
+						v-for="(guest, idx) in guestsData"
 						:key="idx"
 						class="my-1 flex cursor-pointer items-center gap-2 rounded-lg p-1 transition-colors hover:bg-slate-200"
 					>
 						<a
-							:href="`mailto:${participante.email}`"
+							:href="`mailto:${guest.email}`"
 							class="flex items-center gap-2"
 						>
 							<Avatar
-								:label="
-									!participante?.avatar
-										? participante.fullName[0].toUpperCase()
-										: undefined
-								"
-								:image="participante.avatar || undefined"
+								:label="resolveAvatarLavel(guest)"
+								:image="guest?.avatar || undefined"
 								:style="{
 									backgroundColor: generateRandomColor(),
 									color: '#fff',
 								}"
 								shape="circle"
-								:pt="{
-									image: {
-										class: '!rounded-full',
-									},
-								}"
+								:pt="AVATAR_PT"
 								class="!size-6"
 							/>
 							<div class="flex flex-col">
 								<span class="">
-									{{ participante.fullName }}
+									{{ guest.fullName }}
 								</span>
-								<span class="text-xs">{{ participante.email }}</span>
+								<span class="text-xs">{{ guest.email }}</span>
 							</div>
 						</a>
 					</li>
@@ -226,20 +203,33 @@ const guestsEmails = computed(() => {
 	return guestsData.value.map((g) => g.email)
 })
 
-const adjustDateForShow = (
-	allDay: boolean,
-	startDate: Date | null,
-	endDate: Date | null
-) => {
+const eventDate = computed(() => {
+	const startDate = dayjs(clickedEvent.value?.start).format(
+		'dddd, D [de] MMMM [de] YYYY, h:mmA'
+	)
+
+	const endDate = adjustEndDateForShow()
+
+	return `${startDate} ${endDate ? '- ' + endDate : ''}`
+})
+
+const resolveAvatarLavel = (p: IUser) =>
+	!p?.avatar ? p.fullName[0].toUpperCase() : undefined
+
+const adjustEndDateForShow = () => {
+	if (!clickedEvent.value || !clickedEvent.value.end) return
+
+	const {allDay, start, end} = clickedEvent.value
+
 	if (allDay) {
-		return dayjs(startDate).isSame(endDate, 'day')
-			? dayjs(endDate).format('YYYY-MM-DD')
-			: dayjs(endDate)
+		return dayjs(start).isSame(end, 'day')
+			? dayjs(end).format('YYYY-MM-DD')
+			: dayjs(end)
 					.subtract(1, 'day')
 					.format('dddd, D [de] MMMM [de] YYYY, h:mmA')
 	}
 
-	return dayjs(endDate).format('dddd, D [de] MMMM [de] YYYY, h:mmA')
+	return dayjs(end).format('dddd, D [de] MMMM [de] YYYY, h:mmA')
 }
 
 const fetchResponsibleData = async (id: number) => {
@@ -293,13 +283,17 @@ const openDetailsModal = async ({
 	modalPosition.y = y
 	clickedEvent.value = event
 	visible.value = true
+	guestsData.value = []
+
+	const promises = []
 
 	const responsibleId = clickedEvent.value.extendedProps.userId as number
 
-	const guestsIds = clickedEvent?.value?.extendedProps
-		?.guestsIds as string
+	const guestsIds = clickedEvent?.value?.extendedProps?.guestsIds as string
 
-	const promises = [getGuestsData(guestsIds.split(','))]
+	if (guestsIds) {
+		promises.push(getGuestsData(guestsIds.split(',')))
+	}
 
 	if (responsibleId === user.value?.id) {
 		responsibleData.value = user.value
@@ -335,6 +329,12 @@ const confirmDelete = async () => {
 	}
 
 	$toast.error('An error occurred while deleting the event')
+}
+
+const AVATAR_PT = {
+	image: {
+		class: '!rounded-full',
+	},
 }
 
 defineExpose({openDetailsModal})

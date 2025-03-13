@@ -8,14 +8,15 @@ export default defineNuxtPlugin({
 		const useConfirmFn = () => {
 			type Params = {
 				message: string
+				header?: string
 				accept: () => void
 				reject?: () => void
 			}
 
-			const openDeleteModal = ({message, accept, reject}: Params) =>
+			const openDeleteModal = ({message, accept, reject, header}: Params) =>
 				useUseConfirm.require({
 					message,
-					header: 'Danger Zone',
+					header: header ?? 'Danger Zone',
 					icon: 'pi pi-info-circle',
 					rejectLabel: 'Cancel',
 					rejectProps: {
@@ -32,12 +33,37 @@ export default defineNuxtPlugin({
 						useUseConfirm.close()
 					},
 					reject: () => {
-						if(reject) reject()
+						if (reject) reject()
 						useUseConfirm.close()
 					},
 				})
 
-			return {openDeleteModal}
+			const openConfirmModal = ({message, accept, reject, header}: Params) =>
+				useUseConfirm.require({
+					message,
+					header: header ?? 'Warning',
+					icon: 'pi pi-info-circle',
+					rejectLabel: 'Cancel',
+					rejectProps: {
+						label: 'Cancel',
+						severity: 'secondary',
+						outlined: true,
+					},
+					acceptProps: {
+						label: 'Confirm',
+						severity: 'success',
+					},
+					accept: () => {
+						accept()
+						useUseConfirm.close()
+					},
+					reject: () => {
+						if (reject) reject()
+						useUseConfirm.close()
+					},
+				})
+
+			return {openDeleteModal, openConfirmModal}
 		}
 
 		return {

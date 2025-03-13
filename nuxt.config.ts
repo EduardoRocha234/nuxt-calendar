@@ -30,9 +30,6 @@ export default defineNuxtConfig({
 		],
 	],
 	css: ['./assets/css/global.css'],
-	build: {
-		transpile: ['vue-toastification'],
-	},
 	icon: {
 		size: '20px',
 	},

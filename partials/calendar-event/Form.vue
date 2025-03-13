@@ -301,13 +301,6 @@ const validation = zod.object({
 		.min(1, {
 			message: 'Priority is required',
 		}),
-	guestsIds: zod
-		.string({
-			required_error: 'Select guest(s)',
-		})
-		.min(1, {
-			message: 'Select guest(s)',
-		}),
 	description: zod.string().optional().nullable(),
 	recurrencyRule: zod
 		.string()
@@ -326,7 +319,10 @@ const {valid, getError, validate, clearErrors, errors} = useFormValidation(
 
 const sendForm = async () => {
 	try {
-		formEvent.guestsIds = selectedGuests.value.join(',')
+		formEvent.guestsIds =
+			selectedGuests.value.length > 0
+				? selectedGuests.value.join(',')
+				: undefined
 
 		await validate()
 
@@ -344,13 +340,6 @@ const sendForm = async () => {
 const closeModal = () => {
 	visible.value = false
 	Object.assign(formEvent, initialValues)
-}
-
-const deleteEvent = () => {
-	if (props.id) {
-		closeModal()
-		emits('delete', props.id)
-	}
 }
 
 const fetchUsers = async () => {

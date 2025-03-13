@@ -159,6 +159,7 @@ import type {
 	CalendarOptions,
 	DateSelectArg,
 	DatesSetArg,
+	EventDropArg,
 	EventHoveringArg,
 	EventInput,
 } from '@fullcalendar/core'
@@ -172,8 +173,7 @@ import type {
 } from '~/interfaces'
 import type ModalDetalhes from '~/partials/calendar-event/EventDetailsModal.vue'
 
-const {$toast} = useNuxtApp()
-const dayjs = useDayjs()
+const {$toast, $useConfirm, $dayjs} = useNuxtApp()
 const user = useUser()
 
 const op = ref()
@@ -267,7 +267,7 @@ const openEventPopup = (info: EventHoveringArg) => {
 }
 
 const formatDate = (data: Date | null) => {
-	const formatedDate = dayjs(data).format('DD/MM/YYYY HH:mm')
+	const formatedDate = $dayjs(data).format('DD/MM/YYYY HH:mm')
 
 	if (formatedDate === 'Invalid Date') return ''
 
@@ -280,12 +280,12 @@ const adjustDateForShow = (
 	endDate: Date | null
 ) => {
 	if (allDay) {
-		return dayjs(startDate).isSame(endDate, 'day')
-			? new Date(dayjs(endDate).format('YYYY-MM-DD'))
-			: dayjs(endDate).subtract(1, 'day').toDate()
+		return $dayjs(startDate).isSame(endDate, 'day')
+			? new Date($dayjs(endDate).format('YYYY-MM-DD'))
+			: $dayjs(endDate).subtract(1, 'day').toDate()
 	}
 
-	return dayjs(endDate).toDate()
+	return $dayjs(endDate).toDate()
 }
 
 const openUpdateEventModal = (id: string) => {
@@ -298,14 +298,14 @@ const openAddEventModal = (info?: DateSelectArg) => {
 	addEventModalIsVisible.value = true
 
 	if (info) {
-		newEventDate.startDate = dayjs(info.startStr).toDate()
+		newEventDate.startDate = $dayjs(info.startStr).toDate()
 		newEventDate.endDate =
 			info.view.type === 'dayGridMonth'
-				? dayjs(info.endStr).subtract(1, 'day').toDate()
-				: dayjs(info.endStr).toDate()
+				? $dayjs(info.endStr).subtract(1, 'day').toDate()
+				: $dayjs(info.endStr).toDate()
 	} else {
-		newEventDate.startDate = dayjs().toDate()
-		newEventDate.endDate = dayjs().toDate()
+		newEventDate.startDate = $dayjs().toDate()
+		newEventDate.endDate = $dayjs().toDate()
 	}
 }
 
@@ -318,13 +318,13 @@ const fullcalendarProps = computed<CalendarOptions>(() => ({
 		center: 'title',
 		right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
 	},
-	// locale: 'pt-BR',
 	events: eventsFilter.value,
 	dayMaxEventRows: 5,
 	selectable: true,
 	handleWindowResize: true,
 	nowIndicator: true,
 	firstDay: 0,
+	editable: true,
 	weekends: calendarConfigOptions.value.showWeekends,
 	allDaySlot: calendarConfigOptions.value.showAllDayEvents,
 	select: openAddEventModal,
@@ -350,7 +350,54 @@ const fullcalendarProps = computed<CalendarOptions>(() => ({
 	},
 	eventMouseEnter: openEventPopup,
 	datesSet: getEventsNextPeriod,
+	eventDrop: async (event) => {
+		const { openConfirmModal }  = $useConfirm
+
+		openConfirmModal({
+			accept: async () => await updateEventDate(event),
+			reject: () => event.revert(),
+			message: 'Do you want to update the date of this event?',
+			header: 'Update event'
+		})
+	},
 }))
+
+const updateEventDate = async (event: EventDropArg) => {
+	const {
+		_def: {publicId: id},
+		start,
+		end,
+	} = event.oldEvent
+
+	const {days, milliseconds, months, years} = event.delta
+
+	const startDate = $dayjs(start)
+		.add(years, 'year')
+		.add(months, 'month')
+		.add(days, 'day')
+		.add(milliseconds, 'millisecond')
+		.toISOString()
+
+	const endDate = $dayjs(end)
+		.add(years, 'year')
+		.add(months, 'month')
+		.add(days, 'day')
+		.add(milliseconds, 'millisecond')
+		.toISOString()
+
+	const req = await $fetch.raw(`/api/calendar-event/update-date`, {
+		method: 'PUT',
+		body: {id, startDate, endDate},
+		ignoreResponseError: true,
+	})
+
+	if (req.status === 200) {
+		$toast.success('Event updated successfully')
+		return
+	}
+
+	throw new Error((req._data as any).message)
+}
 
 const refreshEvents = async () => {
 	periodsSearched.value = []
@@ -470,9 +517,9 @@ const calculateEndDate = (
 	endDate?: Date
 ) => {
 	if (allDay) {
-		return dayjs(startDate).isSame(endDate, 'day')
-			? dayjs(endDate).format('YYYY-MM-DD')
-			: dayjs(endDate).add(1, 'day').format('YYYY-MM-DD')
+		return $dayjs(startDate).isSame(endDate, 'day')
+			? $dayjs(endDate).format('YYYY-MM-DD')
+			: $dayjs(endDate).add(1, 'day').format('YYYY-MM-DD')
 	}
 
 	return endDate
@@ -482,7 +529,7 @@ const mapEventToFullCalendar = (e: ICalendarEvent) =>
 	({
 		id: e.id?.toString(),
 		title: e.name,
-		start: e.startDate ? dayjs(e.startDate).format('YYYY-MM-DD') : e.startDate,
+		start: e.startDate ? $dayjs(e.startDate).format('YYYY-MM-DD') : e.startDate,
 		end: calculateEndDate(e.allDay!, e.startDate, e.endDate),
 		allDay: e.allDay,
 		backgroundColor: e.color,
