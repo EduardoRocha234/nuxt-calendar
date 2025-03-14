@@ -563,10 +563,11 @@ watch(smallCalendarModel, (nv, ov) => {
 watch(
 	() => calendarConfigOptions.value.showOnlyCalendar,
 	useDebounceFn(() => {
+		console.log('aqui')
 		const calendarApi = fullCalendar?.value?.getApi()
 
 		calendarApi?.updateSize()
-	}, 50)
+	}, 500)
 )
 
 watch(user, (nv) => {

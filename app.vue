@@ -1,5 +1,5 @@
 <template>
-	<div >
+	<div>
 		<Dialog
 			v-model:visible="modalVisible"
 			header="Hello! Good to see you here"
@@ -62,7 +62,7 @@ import {z} from 'zod'
 
 const {$toast} = useNuxtApp()
 
-const modalVisible = ref<boolean>(true)
+const modalVisible = ref<boolean>(false)
 const user = useUser()
 
 const newUser = reactive<Pick<IUser, 'fullName' | 'email'>>({
@@ -106,6 +106,10 @@ const createUser = async () => {
 
 	$toast.error('An error occurred while creating your user')
 }
+
+onMounted(() => {
+	if (!user.value) modalVisible.value = true
+})
 
 provideHeadlessUseId(() => useId())
 </script>

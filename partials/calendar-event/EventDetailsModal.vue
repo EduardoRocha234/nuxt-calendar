@@ -95,7 +95,7 @@
 			>
 				<span class="font-semibold">
 					{{ clickedEvent?.extendedProps.priority }}
-					<picture></picture>riority
+					priority
 				</span>
 			</div>
 
