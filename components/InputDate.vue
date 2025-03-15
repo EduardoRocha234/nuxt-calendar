@@ -7,14 +7,6 @@
 				width="5.6rem"
 			></Skeleton>
 			<template v-if="!loading">
-				<!-- <DatePicker
-					v-model="model"
-					v-bind="props"
-					class="w-full"
-					:invalid="!!error"
-					panel-class="z-[9999]"
-					:auto-z-index="false"
-				/> -->
 				<FloatLabel>
 					<DatePicker
 						v-model="model"

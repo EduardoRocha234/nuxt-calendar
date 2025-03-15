@@ -8,7 +8,7 @@
 			<div class="flex gap-4 transition-all">
 				<Transition name="fade">
 					<Icon
-						v-if="calendarConfigOptions.showOnlyCalendar"
+						v-if="calendarConfigOptions.showOnlyCalendar || isMobile"
 						v-tooltip.bottom="'Add event'"
 						name="mdi:plus"
 						size="26"
@@ -31,12 +31,15 @@
 					class="text-slate-600 cursor-pointer"
 					@click="toggle"
 				/>
-				<Popover ref="op">
+				<Popover ref="popoverRef">
 					<div class="flex flex-col gap-4">
 						<ul
 							class="*:flex *:gap-2 *:transition-colors *:px-2 *:py-2 *:rounded-md *:text-sm"
 						>
-							<li class="hover:bg-green-50">
+							<li
+								class="hover:bg-green-50"
+								v-if="!isMobile"
+							>
 								<Checkbox
 									input-id="showOnlyCalendar"
 									v-model="calendarConfigOptions.showOnlyCalendar"
@@ -85,6 +88,9 @@
 		<div
 			ref="calendarContainer"
 			class="flex h-full w-full"
+			:class="{
+				'flex-col mb-2': isMobile,
+			}"
 		>
 			<Transition name="fade">
 				<AppPartialCalendarSideBar
@@ -95,6 +101,7 @@
 					:loading="loadingCalendars"
 					@add-event="openAddEventModal"
 					@search-calendars="getCalendars"
+					@change-calendar-view="changeViwer"
 				/>
 			</Transition>
 			<div class="relative h-full w-full p-2">
@@ -116,6 +123,7 @@
 				</ClientOnly>
 			</div>
 		</div>
+		<div id="mobile-calendars"></div>
 		<LazyAppPartialCalendarEventDetailsModal
 			ref="eventDetailsModal"
 			@refresh-event="openUpdateEventModal"
@@ -146,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import {useStorage} from '@vueuse/core'
+import {breakpointsTailwind, useStorage} from '@vueuse/core'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -171,22 +179,22 @@ import type {
 	ICalendarEvent,
 	ICalendarMenus,
 } from '~/interfaces'
-import type ModalDetalhes from '~/partials/calendar-event/EventDetailsModal.vue'
 
 const {$toast, $useConfirm, $dayjs} = useNuxtApp()
 const user = useUser()
 
-const op = ref()
+const popoverRef = useTemplateRef('popoverRef')
+const fullCalendar = useTemplateRef('fullCalendar')
+const eventDetailsModal = useTemplateRef('eventDetailsModal')
+const calendarContainer = useTemplateRef('calendarContainer')
+const isMobile = useBreakpoints(breakpointsTailwind).smallerOrEqual('md')
 const loadingCalendars = ref<boolean>(false)
 const loadingEvents = ref<boolean>(false)
 const addEventModalIsVisible = ref<boolean>(false)
-const fullCalendar = ref<InstanceType<typeof FullCalendar> | null>(null)
-const calendarContainer = ref<HTMLElement | null>(null)
 const smallCalendarModel = ref<Date | null>(null)
 const events = ref<EventInput[]>([])
 const selectedCalendars = ref<ICalendarMenus[]>([])
 const allCalendars = ref<ICalendar[]>([])
-const eventDetailsModal = ref<InstanceType<typeof ModalDetalhes> | null>(null)
 const updateEventId = ref<string | null>(null)
 const periodsSearched = ref<string[]>([])
 const getEventParams = reactive<{
@@ -202,7 +210,7 @@ const getEventParams = reactive<{
 const calendarTour = useStorage('tour-agenda', true)
 
 const toggle = (event: Event) => {
-	op.value.toggle(event)
+	popoverRef.value?.toggle(event)
 }
 
 const configureCalendar = reactive<ICalendarConfigForUser>({
@@ -313,11 +321,13 @@ const fullcalendarProps = computed<CalendarOptions>(() => ({
 	timeZone: 'local',
 	plugins: [dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
 	initialView: 'dayGridMonth',
-	headerToolbar: {
-		left: 'prev,next today',
-		center: 'title',
-		right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
-	},
+	headerToolbar: !isMobile.value
+		? {
+				left: 'prev,next today',
+				center: 'title',
+				right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+		  }
+		: undefined,
 	events: eventsFilter.value,
 	dayMaxEventRows: 5,
 	selectable: true,
@@ -351,13 +361,13 @@ const fullcalendarProps = computed<CalendarOptions>(() => ({
 	eventMouseEnter: openEventPopup,
 	datesSet: getEventsNextPeriod,
 	eventDrop: async (event) => {
-		const { openConfirmModal }  = $useConfirm
+		const {openConfirmModal} = $useConfirm
 
 		openConfirmModal({
 			accept: async () => await updateEventDate(event),
 			reject: () => event.revert(),
 			message: 'Do you want to update the date of this event?',
-			header: 'Update event'
+			header: 'Update event',
 		})
 	},
 }))
@@ -458,6 +468,7 @@ const getCalendars = async () => {
 			getEventParams.calendarsIds = ids
 
 			setPeriod()
+			await nextTick()
 			await getEvents()
 			return
 		}
@@ -543,6 +554,14 @@ const mapEventToFullCalendar = (e: ICalendarEvent) =>
 			userId: e.userId,
 		},
 	} satisfies EventInput)
+
+const changeViwer = (newView: string) => {
+	if (fullCalendar.value && newView) {
+		const calendarApi = fullCalendar.value.getApi()
+
+		calendarApi.changeView(newView)
+	}
+}
 
 watch(smallCalendarModel, (nv, ov) => {
 	if (fullCalendar.value) {
@@ -646,7 +665,8 @@ watch(user, (nv) => {
 })
 
 onMounted(async () => {
-	if (!loadingCalendars.value) await getCalendars()
+	await getCalendars()
+	await nextTick()
 })
 </script>
 

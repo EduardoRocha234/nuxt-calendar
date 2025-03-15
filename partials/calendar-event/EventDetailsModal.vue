@@ -182,7 +182,7 @@ const {$toast, $useConfirm} = useNuxtApp()
 
 const dayjs = useDayjs()
 const user = useUser()
-const modalRef = ref<InstanceType<typeof Dialog> | null>(null)
+const modalRef = useTemplateRef('modalRef')
 
 const {copy, isSupported} = useClipboard()
 
