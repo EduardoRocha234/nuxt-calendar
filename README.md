@@ -36,6 +36,7 @@ meu-calendario/
 │   ├── assets/        # Estilos e imagens
 │   ├── components/    # Componentes reutilizáveis
 │   ├── pages/         # Páginas do Nuxt
+│   ├── partials/      # Partes da tela dividas em componentes
 │   ├── server/        # Backend simulado
 │   ├── utils/         # Funções auxiliares
 │   ├── app.vue        # Componente raiz
