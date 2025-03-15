@@ -1,6 +1,6 @@
 # 📅 Calendário Personalizado
 
-![Preview do Calendário](./assets/img/calandar-print.png)
+![Preview do Calendário](./assets/img/calendar-print.png)
 
 Este é um projeto de um calendário inspirado no Google Calendar, criado com Nuxt 3, TypeScript, PrimeVue v4 e Tailwind CSS. O backend é simulado utilizando o BFF (Backend for Frontend) do próprio Nuxt, com um banco de dados SQLite in-memory.
 
